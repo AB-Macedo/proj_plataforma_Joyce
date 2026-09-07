@@ -1,14 +1,17 @@
+import BookingFlow from './components/BookingFlow';
+
 const services = [
-  { eyebrow: 'mensagem ou áudio', name: 'Consulta Essencial', duration: '20 minutos', price: 'R$ 70', description: 'Uma leitura objetiva para acolher sua questão e iluminar os próximos passos.' },
-  { eyebrow: 'atendimento em áudio', name: 'Consulta Profunda', duration: '30 minutos', price: 'R$ 105', description: 'Mais tempo para explorar contextos, caminhos possíveis e diferentes aspectos da questão.', featured: true },
-  { eyebrow: 'leitura temática', name: 'Templo de Vênus', duration: '', price: 'R$ 50', description: 'Uma leitura direcionada às energias, movimentos e aprendizados dos relacionamentos.' },
+  { eyebrow: 'mensagem, áudio ou ligação', name: 'Tempo reservado', duration: '20 minutos', price: 'a partir de R$ 70', description: 'Vinte minutos exclusivos para você fazer as perguntas que desejar e receber as respostas por mensagem, áudio ou ligação.' },
+  { eyebrow: 'mensagem, áudio ou ligação', name: 'Tempo estendido', duration: '30 minutos', price: 'a partir de R$ 105', description: 'Trinta minutos reservados para conversar com calma e fazer as perguntas que desejar dentro do período.', featured: true },
+  { eyebrow: 'leitura temática', name: 'Templo de Vênus', duration: '', price: 'a partir de R$ 50', description: 'Uma abertura completa sobre pensamentos, sentimentos, intenções e a tendência do relacionamento.', note: 'Leitura fechada: não inclui perguntas extras.' },
+  { eyebrow: 'sob aprovação', name: 'Consulta Livre', duration: '20 min a 3 horas', price: 'valor calculado', description: 'Você escolhe o tempo que precisa. O encaixe é analisado antes da confirmação e requer 50% de entrada.', note: 'WhatsApp: R$ 3,50/min · Ligação: R$ 4,50/min' },
 ];
 
-const availableDays = [
-  { day: 'Seg', date: '07', times: ['13:00', '14:30', '17:00'] },
-  { day: 'Ter', date: '08', times: ['13:30', '16:00', '18:00'] },
-  { day: 'Qui', date: '10', times: ['14:00', '15:30', '18:30'] },
-  { day: 'Sex', date: '11', times: ['12:00', '13:30', '14:30'] },
+const specialReadings = [
+  { name: 'Leitura amorosa completa', price: 'Valor a consultar', description: 'Pensamentos, sentimentos, intenções e próximos passos da pessoa do seu interesse.' },
+  { name: 'Campo específico', price: 'Valor a consultar', description: 'Energia geral, obstáculo e conselho para um aspecto que você deseja compreender melhor.' },
+  { name: 'Pergunta objetiva', price: 'Valor a consultar', description: 'Uma pergunta direta e um conselho do baralho sobre o que você pode fazer diante da situação.' },
+  { name: 'Campo geral', price: 'Valor a consultar', description: 'Uma abertura para os campos profissional, financeiro, saúde, espiritual e amoroso.' },
 ];
 
 export default function Home() {
@@ -37,30 +40,32 @@ export default function Home() {
       </section>
 
       <section className="services section" id="consultas">
-        <div className="section-heading"><div><p className="kicker"><span /> Escolha sua leitura</p><h2>Consultas pensadas para o seu momento</h2></div><p>Escolha o formato que combina com a profundidade que você busca hoje.</p></div>
+        <div className="section-heading"><div><p className="kicker"><span /> Escolha sua leitura</p><h2>Um tempo reservado para você</h2></div><p>Escolha o formato que combina com o que você busca hoje.</p></div>
         <div className="service-grid">
           {services.map((service) => (
             <article className={`service-card ${service.featured ? 'featured' : ''}`} key={service.name}>
               {service.featured && <span className="popular">Mais escolhida</span>}
-              <p className="service-eyebrow">{service.eyebrow}</p><h3>{service.name}</h3><p className="service-description">{service.description}</p>
+              <p className="service-eyebrow">{service.eyebrow}</p><h3>{service.name}</h3><p className="service-description">{service.description}</p>{service.note && <p className="service-note">{service.note}</p>}
               <div className={`service-meta ${service.duration ? '' : 'price-only'}`}>{service.duration && <span>{service.duration}</span>}<strong>{service.price}</strong></div>
               <a href="#agenda">Escolher consulta <span aria-hidden="true">→</span></a>
+              <a className="service-whatsapp" href={`https://wa.me/5527988043118?text=${encodeURIComponent(`Olá! Tenho uma dúvida sobre ${service.name}.`)}`} target="_blank" rel="noreferrer">Tirar dúvida no WhatsApp</a>
             </article>
           ))}
+        </div>
+        <div className="special-readings">
+          <div><p className="kicker"><span /> Outras leituras</p><h3>Leituras especiais do catálogo</h3><p>Essas opções têm formato próprio. Solicite os detalhes, valor e disponibilidade diretamente pelo WhatsApp.</p></div>
+          <div className="special-grid">{specialReadings.map((reading) => <a key={reading.name} href={`https://wa.me/5527988043118?text=${encodeURIComponent(`Olá! Gostaria de saber mais sobre a ${reading.name}.`)}`} target="_blank" rel="noreferrer"><strong>{reading.name}</strong><em>{reading.price}</em><span>{reading.description}</span><b>Conversar no WhatsApp →</b></a>)}</div>
         </div>
       </section>
 
       <section className="booking section" id="agenda">
-        <div className="booking-copy"><p className="kicker light"><span /> Agenda da semana</p><h2>Reserve um tempo só seu</h2><p>Os horários exibidos são atualizados conforme a disponibilidade. Selecione uma consulta e escolha o melhor momento.</p>
-          <ol id="como-funciona"><li><span>1</span><div><strong>Escolha a consulta</strong><small>Formato, duração e valor.</small></div></li><li><span>2</span><div><strong>Reserve seu horário</strong><small>Sem troca de mensagens para encontrar uma data.</small></div></li><li><span>3</span><div><strong>Receba a confirmação</strong><small>Com instruções para o atendimento.</small></div></li></ol>
+        <div className="booking-copy"><p className="kicker light"><span /> Agenda da semana</p><h2>Reserve um tempo só seu</h2><p>Você escolhe uma etapa por vez. Os horários exibidos são atualizados conforme a disponibilidade.</p>
+          <ol id="como-funciona"><li><span>1</span><div><strong>Escolha o tempo</strong><small>20 min, 30 min, Templo de Vênus ou livre.</small></div></li><li><span>2</span><div><strong>Escolha o formato</strong><small>Mensagem, áudio ou ligação.</small></div></li><li><span>3</span><div><strong>Reserve o horário</strong><small>Depois, confirme seus dados e as fotos das cartas.</small></div></li></ol>
         </div>
-        <div className="calendar-card"><div className="calendar-top"><div><small>SETEMBRO</small><strong>7 — 12</strong></div><span>Horário de Brasília</span></div>
-          <div className="days">{availableDays.map((item) => <div className="day" key={item.day}><div className="day-heading"><span>{item.day}</span><strong>{item.date}</strong></div>{item.times.map((time) => <button key={time} type="button">{time}</button>)}</div>)}</div>
-          <p className="pilot-note">Piloto visual — a confirmação de reservas será ativada na próxima etapa.</p>
-        </div>
+        <BookingFlow />
       </section>
 
-      <footer><a className="brand footer-brand" href="#inicio"><span className="brand-mark">J</span><span>JoyMagia</span></a><p>Um espaço de escuta, simbolismo e novas perspectivas. · <a href="/painel">Painel</a></p><a href="#inicio">Voltar ao início ↑</a></footer>
+      <footer><a className="brand footer-brand" href="#inicio"><span className="brand-mark">J</span><span>JoyMagia</span></a><div className="footer-contact"><p>Um espaço de escuta, simbolismo e novas perspectivas.</p><span><a href="https://www.instagram.com/joycegoularti.magia/" target="_blank" rel="noreferrer">Instagram @joycegoularti.magia</a> · <a href="https://wa.me/5527988043118" target="_blank" rel="noreferrer">WhatsApp</a> · <a href="tel:+5527988043118">Ligar</a></span></div><a href="#inicio">Voltar ao início ↑</a></footer>
     </main>
   );
 }

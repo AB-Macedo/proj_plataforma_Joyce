@@ -8,6 +8,13 @@
       "when": 1788746400000,
       "tag": "0000_joymagia_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1788748200000,
+      "tag": "0001_booking_flow",
+      "breakpoints": true
     }
   ]
 }

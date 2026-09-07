@@ -7,6 +7,8 @@ export const services = sqliteTable('services', {
   name: text('name').notNull(),
   description: text('description').notNull().default(''),
   priceCents: integer('price_cents').notNull(),
+  whatsappRateCents: integer('whatsapp_rate_cents').notNull().default(350),
+  callRateCents: integer('call_rate_cents').notNull().default(450),
   durationMinutes: integer('duration_minutes').notNull(),
   internalNote: text('internal_note'),
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
@@ -48,6 +50,12 @@ export const appointments = sqliteTable('appointments', {
   customerId: integer('customer_id').notNull().references(() => customers.id),
   startsAt: text('starts_at').notNull(),
   endsAt: text('ends_at').notNull(),
+  bookingCode: text('booking_code').notNull().unique(),
+  format: text('format', { enum: ['whatsapp', 'call'] }).notNull().default('whatsapp'),
+  durationMinutes: integer('duration_minutes').notNull().default(20),
+  quotedPriceCents: integer('quoted_price_cents').notNull().default(0),
+  wantsCardImages: integer('wants_card_images', { mode: 'boolean' }).notNull().default(false),
+  templeRulesAccepted: integer('temple_rules_accepted', { mode: 'boolean' }).notNull().default(false),
   status: text('status', { enum: ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'] }).notNull().default('pending'),
   googleEventId: text('google_event_id'),
   notes: text('notes'),
@@ -63,6 +71,23 @@ export const payments = sqliteTable('payments', {
   status: text('status', { enum: ['pending', 'paid', 'refunded', 'cancelled'] }).notNull().default('pending'),
   paidAt: text('paid_at'),
   createdAt: text('created_at').notNull(),
+});
+
+export const bookingRequests = sqliteTable('booking_requests', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  bookingCode: text('booking_code').notNull().unique(),
+  customerId: integer('customer_id').notNull().references(() => customers.id),
+  serviceId: integer('service_id').notNull().references(() => services.id),
+  preferredStartsAt: text('preferred_starts_at').notNull(),
+  preferredEndsAt: text('preferred_ends_at').notNull(),
+  format: text('format', { enum: ['whatsapp', 'call'] }).notNull(),
+  durationMinutes: integer('duration_minutes').notNull(),
+  quotedPriceCents: integer('quoted_price_cents').notNull(),
+  depositCents: integer('deposit_cents').notNull(),
+  wantsCardImages: integer('wants_card_images', { mode: 'boolean' }).notNull().default(false),
+  status: text('status', { enum: ['requested', 'approved', 'declined', 'converted'] }).notNull().default('requested'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
 });
 
 export const messageTemplates = sqliteTable('message_templates', {
