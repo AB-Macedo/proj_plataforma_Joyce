@@ -40,6 +40,7 @@ export const customers = sqliteTable('customers', {
   name: text('name').notNull(),
   whatsapp: text('whatsapp').notNull(),
   email: text('email'),
+  birthDate: text('birth_date'),
   consentAt: text('consent_at'),
   createdAt: text('created_at').notNull(),
 });

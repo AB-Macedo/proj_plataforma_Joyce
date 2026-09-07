@@ -13,6 +13,7 @@ type BookingBody = {
   name?: string;
   whatsapp?: string;
   email?: string;
+  birthDate?: string;
   wantsCardImages?: boolean;
   templeRulesAccepted?: boolean;
   acceptedTerms?: boolean;
@@ -48,11 +49,13 @@ export async function POST(request: NextRequest) {
   const name = clean(body.name, 90);
   const whatsapp = clean(body.whatsapp, 30).replace(/[^0-9+]/g, '');
   const email = clean(body.email, 160).toLowerCase();
+  const birthDate = clean(body.birthDate, 10);
 
   if (!service || !['whatsapp', 'call'].includes(format)) return NextResponse.json({ error: 'Serviço inválido.' }, { status: 400 });
   if (!Number.isInteger(duration) || duration < service.minDuration || duration > service.maxDuration || duration % 10 !== 0) return NextResponse.json({ error: 'Duração inválida.' }, { status: 400 });
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00$/.test(startsAt) || startsAt.slice(0, 10) < localToday()) return NextResponse.json({ error: 'Escolha um horário válido.' }, { status: 400 });
   if (name.length < 2 || whatsapp.replace(/\D/g, '').length < 10) return NextResponse.json({ error: 'Informe seu nome e um WhatsApp válido.' }, { status: 400 });
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate) || Number.isNaN(new Date(`${birthDate}T12:00:00`).getTime())) return NextResponse.json({ error: 'Informe uma data de nascimento válida.' }, { status: 400 });
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: 'Informe um e-mail válido ou deixe o campo vazio.' }, { status: 400 });
   if (!body.acceptedTerms) return NextResponse.json({ error: 'Confirme que leu as regras do agendamento.' }, { status: 400 });
   if (service.templeRules && !body.templeRulesAccepted) return NextResponse.json({ error: 'Confirme a regra do Templo de Vênus.' }, { status: 400 });
@@ -73,9 +76,9 @@ export async function POST(request: NextRequest) {
   try {
     let customer = await env.DB.prepare('SELECT id FROM customers WHERE whatsapp = ? ORDER BY id DESC LIMIT 1').bind(whatsapp).first<{ id: number }>();
     if (!customer) {
-      customer = await env.DB.prepare('INSERT INTO customers (name, whatsapp, email, consent_at, created_at) VALUES (?, ?, ?, ?, ?) RETURNING id').bind(name, whatsapp, email || null, now, now).first<{ id: number }>();
+      customer = await env.DB.prepare('INSERT INTO customers (name, whatsapp, email, birth_date, consent_at, created_at) VALUES (?, ?, ?, ?, ?, ?) RETURNING id').bind(name, whatsapp, email || null, birthDate, now, now).first<{ id: number }>();
     } else {
-      await env.DB.prepare('UPDATE customers SET name = ?, email = COALESCE(?, email), consent_at = ? WHERE id = ?').bind(name, email || null, now, customer.id).run();
+      await env.DB.prepare('UPDATE customers SET name = ?, email = COALESCE(?, email), birth_date = ?, consent_at = ? WHERE id = ?').bind(name, email || null, birthDate, now, customer.id).run();
     }
     if (!customer) throw new Error('customer_not_created');
 

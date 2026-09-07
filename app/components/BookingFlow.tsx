@@ -14,6 +14,12 @@ type ScheduleResponse = {
 type Success = { code: string; kind: 'booking' | 'request'; priceCents: number; depositCents: number | null; whatsappUrl: string };
 
 const durationOptions = Array.from({ length: 17 }, (_, index) => 20 + index * 10);
+const specialReadings = [
+  'Leitura amorosa completa',
+  'Campo específico',
+  'Pergunta objetiva',
+  'Campo geral',
+];
 
 function dateTimeLabel(value: string): string {
   const [date, time] = value.split('T');
@@ -67,6 +73,7 @@ export default function BookingFlow() {
     const payload = {
       service: serviceSlug, format, duration: effectiveDuration, startsAt: selectedStart,
       name: formData.get('name'), whatsapp: formData.get('whatsapp'), email: formData.get('email'),
+      birthDate: formData.get('birthDate'),
       wantsCardImages: formData.get('wantsCardImages') === 'on', templeRulesAccepted: formData.get('templeRulesAccepted') === 'on',
       acceptedTerms: formData.get('acceptedTerms') === 'on', website: formData.get('website'), formStartedAt,
     };
@@ -108,12 +115,14 @@ export default function BookingFlow() {
 
       {step === 1 && <div className="booking-section flow-stage">
         <p className="booking-step">{stepTitle}</p>
-        <h3>Quanto tempo você quer reservar?</h3>
+        <h3>O que você busca hoje?</h3>
+        <p className="choice-group-label">TEMPOS DE ATENDIMENTO</p>
         <div className="booking-service-options">
           {BOOKING_SERVICES.map((item) => <button className={serviceSlug === item.slug ? 'selected' : ''} key={item.slug} type="button" onClick={() => chooseService(item.slug)}>{item.shortName}{item.requiresApproval && <small>Sob aprovação</small>}</button>)}
         </div>
         {serviceSlug === 'consulta-livre' && <label className="duration-field"><span>Duração desejada</span><select value={duration} onChange={(event) => setDuration(Number(event.target.value))}>{durationOptions.map((value) => <option key={value} value={value}>{value < 60 ? `${value} minutos` : `${Math.floor(value / 60)}h${value % 60 ? ` ${value % 60}min` : ''}`}</option>)}</select><small>Acima de 90 minutos, solicite com pelo menos 24 horas de antecedência.</small></label>}
         {service.templeRules && <div className="temple-alert"><strong>Templo de Vênus é uma leitura fechada</strong><span>Ela já contempla pensamentos, sentimentos, intenções e tendência do relacionamento. Não é possível acrescentar perguntas extras.</span></div>}
+        <div className="special-choice-group"><p className="choice-group-label">OUTRAS LEITURAS · VALOR A CONSULTAR</p><div>{specialReadings.map((reading) => <a href={`https://wa.me/5527988043118?text=${encodeURIComponent(`Olá! Gostaria de saber mais sobre a ${reading}.`)}`} key={reading} target="_blank" rel="noreferrer"><span>{reading}</span><b>WhatsApp ↗</b></a>)}</div></div>
         <button className="flow-next" type="button" onClick={() => setStep(2)}><span>Continuar</span><b aria-hidden="true">→</b></button>
       </div>}
 
@@ -141,11 +150,12 @@ export default function BookingFlow() {
       {selectedStart && <div className="booking-section client-fields">
         <div className="selected-slot"><span>HORÁRIO ESCOLHIDO</span><strong>{dateTimeLabel(selectedStart)}</strong></div>
         <p className="booking-step">3 · SEUS DADOS E PREFERÊNCIAS</p>
-        <div className="field-grid"><label><span>Nome</span><input name="name" required autoComplete="name" /></label><label><span>WhatsApp</span><input name="whatsapp" required inputMode="tel" autoComplete="tel" placeholder="(27) 99999-9999" /></label><label className="full-field"><span>E-mail <small>(opcional)</small></span><input name="email" type="email" autoComplete="email" /></label></div>
+        <div className="field-grid"><label><span>Nome</span><input name="name" required autoComplete="name" /></label><label><span>WhatsApp</span><input name="whatsapp" required inputMode="tel" autoComplete="tel" placeholder="(27) 99999-9999" /></label><label><span>Data de nascimento</span><input name="birthDate" required type="date" autoComplete="bday" /></label><label><span>E-mail <small>(opcional)</small></span><input name="email" type="email" autoComplete="email" /></label></div>
         <input className="honeypot" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
         <label className="check-row"><input name="wantsCardImages" type="checkbox" /><span><strong>Quero receber fotos das cartas pelo WhatsApp.</strong><small>Se esta opção não for marcada, as imagens não serão enviadas automaticamente.</small></span></label>
         {service.templeRules && <label className="check-row"><input name="templeRulesAccepted" required type="checkbox" /><span><strong>Entendi que o Templo de Vênus não inclui perguntas extras.</strong></span></label>}
-        <label className="check-row"><input name="acceptedTerms" required type="checkbox" /><span><strong>Li e concordo com as regras do agendamento e uso dos meus dados para este atendimento.</strong></span></label>
+        <div className="privacy-notice"><strong>Privacidade e uso dos dados</strong><p>Nome, WhatsApp, e-mail e data de nascimento serão usados somente para identificar sua reserva, entrar em contato e realizar este atendimento. Não serão vendidos ou compartilhados para marketing.</p><p>Você pode pedir acesso, correção ou eliminação dos seus dados pelo WhatsApp. Ao término do tratamento, os dados serão eliminados ou anonimizados nos limites da LGPD, salvo obrigação legal de conservação.</p></div>
+        <label className="check-row"><input name="acceptedTerms" required type="checkbox" /><span><strong>Li e concordo com as regras do agendamento e com o uso dos meus dados para esta finalidade.</strong><small>O consentimento pode ser revogado e os direitos sobre seus dados podem ser solicitados pelo WhatsApp.</small></span></label>
         {error && <p className="booking-error" role="alert">{error}</p>}
         <button className="submit-booking" disabled={submitting} type="submit">{submitting ? 'Registrando…' : service.requiresApproval ? 'Enviar solicitação para aprovação' : 'Solicitar reserva deste horário'}</button>
       </div>}
