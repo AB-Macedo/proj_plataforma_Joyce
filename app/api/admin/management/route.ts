@@ -1,0 +1,103 @@
+import { env } from 'cloudflare:workers';
+import { NextRequest, NextResponse } from 'next/server';
+import { requireDashboardAdmin } from '../../../dashboard-auth';
+
+export const dynamic = 'force-dynamic';
+
+const allowedAppointmentStatuses = new Set(['pending', 'confirmed', 'completed', 'cancelled', 'no_show']);
+const allowedPaymentStatuses = new Set(['pending', 'paid', 'refunded', 'cancelled']);
+
+function text(value: unknown, length: number) {
+  return typeof value === 'string' ? value.trim().slice(0, length) : '';
+}
+
+function time(value: unknown) {
+  const item = text(value, 5);
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(item) ? item : '';
+}
+
+export async function GET() {
+  await requireDashboardAdmin('/painel');
+  const now = new Date().toISOString();
+  const [services, availability, exceptions, customers, appointments, templates] = await Promise.all([
+    env.DB.prepare('SELECT id, slug, name, description, price_cents, whatsapp_rate_cents, call_rate_cents, duration_minutes, internal_note, active, sort_order FROM services ORDER BY sort_order, id').all(),
+    env.DB.prepare('SELECT id, weekday, start_time, end_time, active FROM weekly_availability ORDER BY weekday, start_time').all(),
+    env.DB.prepare('SELECT id, date, start_time, end_time, kind, reason FROM availability_exceptions WHERE date >= ? ORDER BY date, start_time').bind(now.slice(0, 10)).all(),
+    env.DB.prepare("SELECT c.id, c.name, c.whatsapp, c.email, c.birth_date, c.created_at, COUNT(a.id) AS bookings FROM customers c LEFT JOIN appointments a ON a.customer_id = c.id GROUP BY c.id ORDER BY c.created_at DESC LIMIT 50").all(),
+    env.DB.prepare("SELECT a.id, a.starts_at, a.duration_minutes, a.quoted_price_cents, a.status, a.format, a.wants_card_images, c.name, c.whatsapp, s.name AS service, (SELECT p.status FROM payments p WHERE p.appointment_id = a.id ORDER BY p.id DESC LIMIT 1) AS payment_status FROM appointments a JOIN customers c ON c.id=a.customer_id JOIN services s ON s.id=a.service_id ORDER BY a.starts_at DESC LIMIT 80").all(),
+    env.DB.prepare('SELECT id, key, channel, title, body, active FROM message_templates ORDER BY id').all(),
+  ]);
+  return NextResponse.json({ services: services.results, availability: availability.results, exceptions: exceptions.results, customers: customers.results, appointments: appointments.results, templates: templates.results });
+}
+
+export async function PATCH(request: NextRequest) {
+  await requireDashboardAdmin('/painel');
+  const body = await request.json() as Record<string, unknown>;
+  const action = text(body.action, 40);
+  const now = new Date().toISOString();
+
+  if (action === 'service') {
+    const id = Number(body.id);
+    const name = text(body.name, 80);
+    const description = text(body.description, 450);
+    const duration = Number(body.durationMinutes);
+    const price = Math.round(Number(body.price) * 100);
+    const whatsappRate = Math.round(Number(body.whatsappRate) * 100);
+    const callRate = Math.round(Number(body.callRate) * 100);
+    if (!Number.isInteger(id) || name.length < 2 || !Number.isInteger(duration) || duration < 5 || duration > 180 || !Number.isInteger(price) || price < 0 || !Number.isInteger(whatsappRate) || whatsappRate < 0 || !Number.isInteger(callRate) || callRate < 0) return NextResponse.json({ error: 'Revise os dados do serviço.' }, { status: 400 });
+    await env.DB.prepare('UPDATE services SET name=?, description=?, price_cents=?, whatsapp_rate_cents=?, call_rate_cents=?, duration_minutes=?, active=?, updated_at=? WHERE id=?').bind(name, description, price, whatsappRate, callRate, duration, body.active ? 1 : 0, now, id).run();
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'availability') {
+    const items = Array.isArray(body.items) ? body.items : [];
+    const clean = items.map((item) => item as Record<string, unknown>).map((item) => ({ weekday: Number(item.weekday), start: time(item.start), end: time(item.end), active: Boolean(item.active) })).filter((item) => Number.isInteger(item.weekday) && item.weekday >= 1 && item.weekday <= 6 && item.start && item.end && item.start < item.end);
+    if (clean.length !== items.length) return NextResponse.json({ error: 'Revise os horários da semana.' }, { status: 400 });
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM weekly_availability'),
+      ...clean.map((item) => env.DB.prepare('INSERT INTO weekly_availability (weekday, start_time, end_time, active) VALUES (?, ?, ?, ?)').bind(item.weekday, item.start, item.end, item.active ? 1 : 0)),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'exception-create') {
+    const date = text(body.date, 10);
+    const kind = body.kind === 'open' ? 'open' : 'blocked';
+    const start = time(body.start);
+    const end = time(body.end);
+    const reason = text(body.reason, 120);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || (start && !end) || (!start && end) || (start && start >= end)) return NextResponse.json({ error: 'Revise a data e o período.' }, { status: 400 });
+    await env.DB.prepare('INSERT INTO availability_exceptions (date, start_time, end_time, kind, reason, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(date, start || null, end || null, kind, reason || null, now).run();
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'exception-delete') {
+    const id = Number(body.id);
+    if (!Number.isInteger(id)) return NextResponse.json({ error: 'Exceção inválida.' }, { status: 400 });
+    await env.DB.prepare('DELETE FROM availability_exceptions WHERE id=?').bind(id).run();
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'appointment') {
+    const id = Number(body.id);
+    const status = text(body.status, 20);
+    const payment = text(body.paymentStatus, 20);
+    if (!Number.isInteger(id) || !allowedAppointmentStatuses.has(status) || !allowedPaymentStatuses.has(payment)) return NextResponse.json({ error: 'Status inválido.' }, { status: 400 });
+    await env.DB.batch([
+      env.DB.prepare('UPDATE appointments SET status=?, updated_at=? WHERE id=?').bind(status, now, id),
+      env.DB.prepare("UPDATE payments SET status=?, paid_at=CASE WHEN ?='paid' THEN ? ELSE paid_at END WHERE appointment_id=?").bind(payment, payment, now, id),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'template') {
+    const id = Number(body.id);
+    const title = text(body.title, 100);
+    const messageBody = text(body.body, 2000);
+    if (!Number.isInteger(id) || title.length < 2 || messageBody.length < 2) return NextResponse.json({ error: 'Escreva um título e uma mensagem.' }, { status: 400 });
+    await env.DB.prepare('UPDATE message_templates SET title=?, body=?, active=?, updated_at=? WHERE id=?').bind(title, messageBody, body.active ? 1 : 0, now, id).run();
+    return NextResponse.json({ ok: true });
+  }
+
+  return NextResponse.json({ error: 'Ação desconhecida.' }, { status: 400 });
+}

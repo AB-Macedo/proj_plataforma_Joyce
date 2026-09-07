@@ -2,7 +2,8 @@ import { env } from 'cloudflare:workers';
 import { chatGPTSignOutPath } from '../chatgpt-auth';
 import { requireDashboardAdmin } from '../dashboard-auth';
 import DashboardControls from './DashboardControls';
-import { addDays, localToday, weekday } from '../../lib/schedule';
+import DashboardWorkspace from './DashboardWorkspace';
+import { addDays, localToday } from '../../lib/schedule';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,10 +34,6 @@ export default async function DashboardPage() {
   const user = await requireDashboardAdmin('/painel');
   const data = await dashboardData();
   const firstName = user.fullName?.split(' ')[0] ?? 'Joyce';
-  const week = [
-    { day: 'Seg', hours: '13h — 19h', load: 6, tone: 'wine' }, { day: 'Ter', hours: '13h — 19h', load: 6, tone: 'gold' }, { day: 'Qua', hours: 'Bloqueado', load: 0, tone: 'off' }, { day: 'Qui', hours: '13h — 19h', load: 6, tone: 'navy' }, { day: 'Sex', hours: '12h — 15h', load: 3, tone: 'wine' }, { day: 'Sáb', hours: '13h — 19h', load: 6, tone: 'gold' },
-  ];
-
   return (
     <main className="dashboard-shell">
       <aside className="dash-sidebar">
@@ -60,24 +57,8 @@ export default async function DashboardPage() {
         </div>
 
         <div className="dash-grid">
-          <article className="dash-panel schedule-panel" id="agenda-painel">
-            <div className="panel-head"><div><p>DISPONIBILIDADE</p><h2>Semana de 7 a 12 de setembro</h2></div><button type="button">Editar semana</button></div>
-            <div className="week-grid">{week.map((item) => <div className={`week-day ${item.tone}`} key={item.day}><strong>{item.day}</strong><span>{item.hours}</span><div><i style={{ width: `${item.load / 6 * 100}%` }} /></div><small>{item.load ? `${item.load}h abertas` : 'Sem atendimento'}</small></div>)}</div>
-            <div className="schedule-actions"><button type="button">＋ Abrir horário</button><button type="button">⊘ Bloquear período</button><button type="button">⧉ Copiar semana anterior</button></div>
-          </article>
-
-          <article className="dash-panel today-panel">
-            <div className="panel-head"><div><p>PRÓXIMOS</p><h2>{data.appointments.length} atendimentos</h2></div><span className="date-chip">{data.today.slice(8)}</span></div>
-            <div className="appointment-list">{data.appointments.slice(0, 5).map((item) => <div className="appointment" key={item.starts_at}><time>{item.starts_at.slice(11, 16)}</time><div><strong>{item.name}</strong><small>{item.service}</small></div><span className={item.payment_status === 'paid' ? 'paid' : 'pending'}>{item.payment_status === 'paid' ? 'Pago' : 'Pendente'}</span></div>)}{!data.appointments.length && <p className="empty-panel">Nenhuma reserva registrada ainda.</p>}</div>
-            <a href="#agenda-painel">Ver agenda completa →</a>
-          </article>
-
+          <DashboardWorkspace />
           <DashboardControls initialEnabled={data.enabled} initialMinutes={data.limit} />
-
-          <article className="dash-panel services-panel" id="servicos-painel">
-            <div className="panel-head"><div><p>SERVIÇOS</p><h2>Consultas ativas</h2></div><button type="button">Editar serviços</button></div>
-            <div className="mini-services"><div><span>20 min</span><strong>Consulta Essencial</strong><b>R$ 70</b></div><div><span>30 min</span><strong>Consulta Profunda</strong><b>R$ 105</b></div><div><span>20 min</span><strong>Templo de Vênus</strong><b>R$ 50</b></div></div>
-          </article>
         </div>
       </section>
     </main>
