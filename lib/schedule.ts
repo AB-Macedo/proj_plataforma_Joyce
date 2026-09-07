@@ -2,6 +2,7 @@ import { env } from 'cloudflare:workers';
 
 export const TIME_ZONE = 'America/Sao_Paulo';
 export const SLOT_STEP_MINUTES = 30;
+export const DEFAULT_DAILY_LIMIT_MINUTES = 180;
 
 export type Slot = { start: string; time: string };
 export type ScheduleDay = { date: string; dayLabel: string; dateLabel: string; disabled: boolean; reason?: string; slots: Slot[] };
@@ -18,6 +19,7 @@ const DEFAULT_WINDOWS: Record<number, Array<{ start: string; end: string }>> = {
 type AppointmentWindow = { starts_at: string; ends_at: string; duration_minutes: number };
 type AvailabilityRow = { weekday: number; start_time: string; end_time: string };
 type ExceptionRow = { date: string; start_time: string | null; end_time: string | null; kind: 'open' | 'blocked' };
+type SettingRow = { key: string; value: string };
 
 export function localToday(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
@@ -71,16 +73,24 @@ export async function buildSchedule(durationMinutes: number): Promise<{ weeks: S
   let availability: AvailabilityRow[] = [];
   let appointments: AppointmentWindow[] = [];
   let exceptions: ExceptionRow[] = [];
+  let dailyLimitMinutes = DEFAULT_DAILY_LIMIT_MINUTES;
 
   try {
-    const [availabilityResult, appointmentResult, exceptionResult] = await Promise.all([
+    const [availabilityResult, appointmentResult, exceptionResult, settingsResult] = await Promise.all([
       env.DB.prepare('SELECT weekday, start_time, end_time FROM weekly_availability WHERE active = true ORDER BY weekday, start_time').all<AvailabilityRow>(),
       env.DB.prepare("SELECT starts_at, ends_at, duration_minutes FROM appointments WHERE status IN ('pending','confirmed') AND starts_at >= ? AND starts_at < ? ORDER BY starts_at").bind(`${currentMonday}T00:00:00`, `${through}T00:00:00`).all<AppointmentWindow>(),
       env.DB.prepare('SELECT date, start_time, end_time, kind FROM availability_exceptions WHERE date >= ? AND date < ? ORDER BY date, start_time').bind(currentMonday, through).all<ExceptionRow>(),
+      env.DB.prepare("SELECT key, value FROM settings WHERE key IN ('daily_limit_enabled', 'daily_limit_minutes')").all<SettingRow>(),
     ]);
     availability = availabilityResult.results;
     appointments = appointmentResult.results;
     exceptions = exceptionResult.results;
+    const settings = new Map(settingsResult.results.map((item) => [item.key, item.value]));
+    if (settings.get('daily_limit_enabled') === 'false') dailyLimitMinutes = Number.POSITIVE_INFINITY;
+    else {
+      const configured = Number(settings.get('daily_limit_minutes'));
+      if (Number.isFinite(configured) && configured > 0) dailyLimitMinutes = configured;
+    }
   } catch {
     availability = Object.entries(DEFAULT_WINDOWS).flatMap(([day, windows]) => windows.map((window) => ({ weekday: Number(day), start_time: window.start, end_time: window.end })));
   }
@@ -103,13 +113,14 @@ export async function buildSchedule(durationMinutes: number): Promise<{ weeks: S
       const slots: Slot[] = [];
 
       if (!fullyBlocked && date >= today) {
+        const bookedForDay = appointments.filter((item) => item.starts_at.slice(0, 10) === date).reduce((total, item) => total + item.duration_minutes, 0);
         for (const window of windows) {
           for (let value = minutes(window.start); value + durationMinutes <= minutes(window.end); value += SLOT_STEP_MINUTES) {
             const time = timeFromMinutes(value);
             const start = `${date}T${time}:00`;
             const end = endTimestamp(start, durationMinutes);
             const blockedByException = dayExceptions.some((item) => item.kind === 'blocked' && item.start_time && item.end_time && start < `${date}T${item.end_time}:00` && end > `${date}T${item.start_time}:00`);
-            if (!blockedByException && !appointments.some((item) => overlaps(start, end, item))) slots.push({ start, time });
+            if (!blockedByException && !appointments.some((item) => overlaps(start, end, item)) && bookedForDay + durationMinutes <= dailyLimitMinutes) slots.push({ start, time });
           }
         }
       }
@@ -130,5 +141,12 @@ export async function validateSlot(start: string, durationMinutes: number, allow
   if (allowRequestedOverlap) return true;
   const end = endTimestamp(start, durationMinutes);
   const conflict = await env.DB.prepare("SELECT id FROM appointments WHERE status IN ('pending','confirmed') AND starts_at < ? AND ends_at > ? LIMIT 1").bind(end, start).first();
-  return !conflict;
+  if (conflict) return false;
+  const settings = await env.DB.prepare("SELECT key, value FROM settings WHERE key IN ('daily_limit_enabled', 'daily_limit_minutes')").all<SettingRow>();
+  const values = new Map(settings.results.map((item) => [item.key, item.value]));
+  if (values.get('daily_limit_enabled') === 'false') return true;
+  const configured = Number(values.get('daily_limit_minutes'));
+  const limit = Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_DAILY_LIMIT_MINUTES;
+  const booked = await env.DB.prepare("SELECT COALESCE(SUM(duration_minutes), 0) AS total FROM appointments WHERE status IN ('pending','confirmed') AND starts_at >= ? AND starts_at < ?").bind(`${start.slice(0, 10)}T00:00:00`, `${addDays(start.slice(0, 10), 1)}T00:00:00`).first<{ total: number }>();
+  return Number(booked?.total ?? 0) + durationMinutes <= limit;
 }

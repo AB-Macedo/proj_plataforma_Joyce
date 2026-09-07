@@ -24,7 +24,7 @@ export default async function DashboardPage() {
   return (
     <main className="dashboard-shell">
       <aside className="dash-sidebar">
-        <a className="brand dash-brand" href="/"><span className="brand-mark">J</span><span>JoyMagia</span></a>
+        <a className="brand dash-brand" href="/"><span className="brand-mark">J</span><span>Joyce Magia</span></a>
         <nav className="dash-nav" aria-label="Navegação do painel">
           <a className="active" href="/painel"><span>⌂</span>Visão geral</a><a href="#agenda-painel"><span>□</span>Agenda</a><a href="#servicos-painel"><span>✦</span>Serviços</a><a href="#clientes"><span>♙</span>Clientes</a><a href="#financeiro"><span>◌</span>Financeiro</a><a href="#mensagens"><span>✉</span>Mensagens</a>
         </nav>

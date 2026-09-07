@@ -2,7 +2,7 @@
 
 ## Fase 0 — fundação e piloto visual
 
-- [x] Definir nome provisório JoyMagia e paleta inicial.
+- [x] Definir nome profissional Joyce Magia e paleta inicial.
 - [x] Registrar serviços e disponibilidade inicial.
 - [x] Documentar visão, arquitetura, decisões e manutenção.
 - [ ] Publicar primeira versão navegável em endereço temporário.
@@ -47,4 +47,3 @@
 - [ ] Carrinho, pedidos e pagamento online.
 - [ ] Frete, retirada ou entrega.
 - [ ] Painel conjunto de serviços e comércio.
-

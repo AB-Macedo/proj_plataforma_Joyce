@@ -1,6 +1,6 @@
-# JoyMagia — plataforma de atendimentos
+# Joyce Magia — plataforma de atendimentos
 
-Piloto de uma plataforma online para organizar os atendimentos de cartomancia da Joyce, reduzir o trabalho manual no WhatsApp e dar visibilidade sobre agenda, clientes e caixa. **JoyMagia é um nome provisório** e poderá ser substituído sem alterar a arquitetura.
+Piloto de uma plataforma online para organizar os atendimentos de cartomancia da Joyce, reduzir o trabalho manual no WhatsApp e dar visibilidade sobre agenda, clientes e caixa.
 
 ## Objetivos do piloto
 
@@ -45,4 +45,3 @@ O padrão soma 27 horas. Cada semana poderá sobrescrever esses horários, bloqu
 ## Estado atual
 
 Em construção. A primeira entrega é um piloto navegável com site público, seleção de serviço e uma prévia do painel administrativo. Persistência, autenticação administrativa, Google Agenda e WhatsApp oficial serão ativados por etapas.
-

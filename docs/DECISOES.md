@@ -2,7 +2,7 @@
 
 ## ADR-001 — nome provisório
 
-**Decisão:** usar JoyMagia durante o piloto.
+**Decisão:** usar Joyce Magia como nome profissional do projeto.
 
 **Motivo:** permite trabalhar produto e identidade antes do registro do domínio e da escolha da marca definitiva.
 
@@ -33,4 +33,3 @@
 **Decisão:** manter código documentado e contas configuráveis; domínio, e-mail e integrações definitivas pertencerão à profissional.
 
 **Motivo:** o negócio deve continuar funcionando sem depender permanentemente de quem desenvolveu o piloto.
-

@@ -1,24 +1,24 @@
 import BookingFlow from './components/BookingFlow';
 
 const services = [
-  { eyebrow: 'mensagem, áudio ou ligação', name: 'Tempo reservado', duration: '20 minutos', price: 'a partir de R$ 70', description: 'Vinte minutos exclusivos para você fazer as perguntas que desejar e receber as respostas por mensagem, áudio ou ligação.' },
-  { eyebrow: 'mensagem, áudio ou ligação', name: 'Tempo estendido', duration: '30 minutos', price: 'a partir de R$ 105', description: 'Trinta minutos reservados para conversar com calma e fazer as perguntas que desejar dentro do período.', featured: true },
+  { eyebrow: 'consulta livre', name: 'Consulta livre · 20 min', duration: '20 minutos', price: 'a partir de R$ 70', description: 'Vinte minutos para você fazer as perguntas que desejar e receber as respostas por mensagem, áudio ou ligação.' },
+  { eyebrow: 'consulta livre', name: 'Consulta livre · 30 min', duration: '30 minutos', price: 'a partir de R$ 105', description: 'Trinta minutos para conversar com calma e fazer as perguntas que desejar dentro do período.', featured: true },
   { eyebrow: 'leitura temática', name: 'Templo de Vênus', duration: '', price: 'a partir de R$ 50', description: 'Uma abertura completa sobre pensamentos, sentimentos, intenções e a tendência do relacionamento.', note: 'Leitura fechada: não inclui perguntas extras.' },
-  { eyebrow: 'sob aprovação', name: 'Consulta Livre', duration: '20 min a 3 horas', price: 'valor calculado', description: 'Você escolhe o tempo que precisa. O encaixe é analisado antes da confirmação e requer 50% de entrada.', note: 'WhatsApp: R$ 3,50/min · Ligação: R$ 4,50/min' },
+  { eyebrow: 'sob aprovação', name: 'Escolha seu tempo', duration: '20 min a 3 horas', price: 'valor calculado', description: 'Você escolhe o tempo que precisa. O encaixe é analisado antes da confirmação e requer 50% de entrada.' },
 ];
 
 const specialReadings = [
-  { name: 'Leitura amorosa completa', price: 'Valor a consultar', description: 'Pensamentos, sentimentos, intenções e próximos passos da pessoa do seu interesse.' },
-  { name: 'Campo específico', price: 'Valor a consultar', description: 'Energia geral, obstáculo e conselho para um aspecto que você deseja compreender melhor.' },
-  { name: 'Pergunta objetiva', price: 'Valor a consultar', description: 'Uma pergunta direta e um conselho do baralho sobre o que você pode fazer diante da situação.' },
-  { name: 'Campo geral', price: 'Valor a consultar', description: 'Uma abertura para os campos profissional, financeiro, saúde, espiritual e amoroso.' },
+  { name: 'Leitura amorosa completa', price: 'R$ 10,00 · piloto', description: 'Pensamentos, sentimentos, intenções e próximos passos da pessoa do seu interesse.' },
+  { name: 'Campo específico', price: 'R$ 10,00 · piloto', description: 'Energia geral, obstáculo e conselho para um aspecto que você deseja compreender melhor.' },
+  { name: 'Pergunta objetiva', price: 'R$ 10,00 · piloto', description: 'Uma pergunta direta e um conselho do baralho sobre o que você pode fazer diante da situação.' },
+  { name: 'Campo geral', price: 'R$ 10,00 · piloto', description: 'Uma abertura para os campos profissional, financeiro, saúde, espiritual e amoroso.' },
 ];
 
 export default function Home() {
   return (
     <main>
       <header className="site-header">
-        <a className="brand" href="#inicio" aria-label="JoyMagia, início"><span className="brand-mark" aria-hidden="true">J</span><span>JoyMagia</span></a>
+        <a className="brand" href="#inicio" aria-label="Joyce Magia, início"><span className="brand-mark" aria-hidden="true">J</span><span>Joyce Magia</span></a>
         <nav aria-label="Navegação principal"><a href="#consultas">Consultas</a><a href="#agenda">Agenda</a><a href="#como-funciona">Como funciona</a></nav>
         <a className="header-cta" href="#agenda">Agendar</a>
       </header>
@@ -41,6 +41,7 @@ export default function Home() {
 
       <section className="services section" id="consultas">
         <div className="section-heading"><div><p className="kicker"><span /> Escolha sua leitura</p><h2>Um tempo reservado para você</h2></div><p>Escolha o formato que combina com o que você busca hoje.</p></div>
+        <p className="general-pricing">Mensagens e áudios: <strong>R$ 3,50/min</strong> · Ligação: <strong>R$ 4,50/min</strong></p>
         <div className="service-grid">
           {services.map((service) => (
             <article className={`service-card ${service.featured ? 'featured' : ''}`} key={service.name}>
@@ -53,19 +54,19 @@ export default function Home() {
           ))}
         </div>
         <div className="special-readings">
-          <div><p className="kicker"><span /> Outras leituras</p><h3>Leituras especiais do catálogo</h3><p>Essas opções têm formato próprio. Solicite os detalhes, valor e disponibilidade diretamente pelo WhatsApp.</p></div>
-          <div className="special-grid">{specialReadings.map((reading) => <a key={reading.name} href={`https://wa.me/5527988043118?text=${encodeURIComponent(`Olá! Gostaria de saber mais sobre a ${reading.name}.`)}`} target="_blank" rel="noreferrer"><strong>{reading.name}</strong><em>{reading.price}</em><span>{reading.description}</span><b>Conversar no WhatsApp →</b></a>)}</div>
+          <div><p className="kicker"><span /> Outras leituras</p><h3>Leituras especiais do catálogo</h3><p>Para este piloto, todas podem ser agendadas no site pelo valor teste informado.</p></div>
+          <div className="special-grid">{specialReadings.map((reading) => <article key={reading.name}><strong>{reading.name}</strong><em>{reading.price}</em><span>{reading.description}</span><div><a href="#agenda">Agendar pelo site →</a><a href={`https://wa.me/5527988043118?text=${encodeURIComponent(`Olá! Tenho uma dúvida sobre ${reading.name}.`)}`} target="_blank" rel="noreferrer">Tirar dúvida no WhatsApp</a></div></article>)}</div>
         </div>
       </section>
 
       <section className="booking section" id="agenda">
         <div className="booking-copy"><p className="kicker light"><span /> Agenda da semana</p><h2>Reserve um tempo só seu</h2><p>Você escolhe uma etapa por vez. Os horários exibidos são atualizados conforme a disponibilidade.</p>
-          <ol id="como-funciona"><li><span>1</span><div><strong>Escolha o tempo</strong><small>20 min, 30 min, Templo de Vênus ou livre.</small></div></li><li><span>2</span><div><strong>Escolha o formato</strong><small>Mensagem, áudio ou ligação.</small></div></li><li><span>3</span><div><strong>Reserve o horário</strong><small>Depois, confirme seus dados e as fotos das cartas.</small></div></li></ol>
+          <ol id="como-funciona"><li><span>1</span><div><strong>Escolha seu atendimento e tempo</strong><small>Consulta livre, Templo de Vênus ou leitura especial.</small></div></li><li><span>2</span><div><strong>Escolha o formato</strong><small>Mensagem, áudio ou ligação.</small></div></li><li><span>3</span><div><strong>Reserve o horário</strong><small>Depois, confirme seus dados e as fotos das cartas.</small></div></li></ol>
         </div>
         <BookingFlow />
       </section>
 
-      <footer><a className="brand footer-brand" href="#inicio"><span className="brand-mark">J</span><span>JoyMagia</span></a><div className="footer-contact"><p>Um espaço de escuta, simbolismo e novas perspectivas.</p><span><a href="https://www.instagram.com/joycegoularti.magia/" target="_blank" rel="noreferrer">Instagram @joycegoularti.magia</a> · <a href="https://wa.me/5527988043118" target="_blank" rel="noreferrer">WhatsApp</a> · <a href="tel:+5527988043118">Ligar</a></span></div><a href="#inicio">Voltar ao início ↑</a></footer>
+      <footer><a className="brand footer-brand" href="#inicio"><span className="brand-mark">J</span><span>Joyce Magia</span></a><div className="footer-contact"><p>Um espaço de escuta, simbolismo e novas perspectivas.</p><span className="social-links"><a href="https://www.instagram.com/joycegoularti.magia/" target="_blank" rel="noreferrer"><i aria-hidden="true">◎</i> Instagram</a><a href="https://wa.me/5527988043118" target="_blank" rel="noreferrer"><i className="whatsapp-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M19.1 4.9A9.8 9.8 0 0 0 3.5 16.7L2.3 21.2l4.6-1.2A9.8 9.8 0 1 0 19.1 4.9Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="M8.4 7.5c.2-.4.5-.4.8-.4h.5c.2 0 .4.1.5.4l.7 1.6c.1.2.1.4 0 .6l-.5.7c-.1.2-.1.3 0 .5.5.9 1.2 1.7 2.1 2.2.2.1.3.1.5 0l.8-.8c.2-.2.4-.2.6-.1l1.6.8c.3.1.4.3.4.5v.5c0 .4-.2.7-.5.9-.5.3-1.2.4-2 .1-1.2-.4-2.7-1.4-3.8-2.7-1-1.1-1.8-2.5-2-3.6-.2-.8 0-1.4.3-1.9Z" fill="currentColor"/></svg></i> WhatsApp</a><a href="tel:+5527988043118"><i aria-hidden="true">☎</i> Ligar</a></span><a className="privacy-link" href="/privacidade">Privacidade e uso de dados</a></div><a href="#inicio">Voltar ao início ↑</a></footer>
     </main>
   );
 }
