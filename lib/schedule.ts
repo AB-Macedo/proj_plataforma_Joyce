@@ -25,6 +25,10 @@ export function localToday(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 }
 
+function localCurrentTime(): string {
+  return new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date());
+}
+
 export function addDays(date: string, amount: number): string {
   const result = new Date(`${date}T12:00:00Z`);
   result.setUTCDate(result.getUTCDate() + amount);
@@ -68,6 +72,7 @@ function weekLabel(startsOn: string): string {
 
 export async function buildSchedule(durationMinutes: number): Promise<{ weeks: ScheduleWeek[]; nextWeekLocked: boolean }> {
   const today = localToday();
+  const currentTime = localCurrentTime();
   const currentMonday = mondayOf(today);
   const through = addDays(currentMonday, 14);
   let availability: AvailabilityRow[] = [];
@@ -112,7 +117,7 @@ export async function buildSchedule(durationMinutes: number): Promise<{ weeks: S
       const windows = openExceptions.length ? openExceptions.map((item) => ({ start: item.start_time!, end: item.end_time! })) : baseWindows;
       const slots: Slot[] = [];
 
-      if (!fullyBlocked && date >= today) {
+      if (!fullyBlocked && (date > today || date === today)) {
         const bookedForDay = appointments.filter((item) => item.starts_at.slice(0, 10) === date).reduce((total, item) => total + item.duration_minutes, 0);
         for (const window of windows) {
           for (let value = minutes(window.start); value + durationMinutes <= minutes(window.end); value += SLOT_STEP_MINUTES) {
@@ -120,7 +125,8 @@ export async function buildSchedule(durationMinutes: number): Promise<{ weeks: S
             const start = `${date}T${time}:00`;
             const end = endTimestamp(start, durationMinutes);
             const blockedByException = dayExceptions.some((item) => item.kind === 'blocked' && item.start_time && item.end_time && start < `${date}T${item.end_time}:00` && end > `${date}T${item.start_time}:00`);
-            if (!blockedByException && !appointments.some((item) => overlaps(start, end, item)) && bookedForDay + durationMinutes <= dailyLimitMinutes) slots.push({ start, time });
+            const alreadyStarted = date === today && time <= currentTime;
+            if (!alreadyStarted && !blockedByException && !appointments.some((item) => overlaps(start, end, item)) && bookedForDay + durationMinutes <= dailyLimitMinutes) slots.push({ start, time });
           }
         }
       }

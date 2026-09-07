@@ -101,6 +101,16 @@ export const messageTemplates = sqliteTable('message_templates', {
   updatedAt: text('updated_at').notNull(),
 });
 
+export const feedback = sqliteTable('feedback', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name'),
+  rating: integer('rating').notNull(),
+  message: text('message').notNull(),
+  contactAllowed: integer('contact_allowed', { mode: 'boolean' }).notNull().default(false),
+  status: text('status', { enum: ['new', 'reviewed', 'archived'] }).notNull().default('new'),
+  createdAt: text('created_at').notNull(),
+});
+
 export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),
