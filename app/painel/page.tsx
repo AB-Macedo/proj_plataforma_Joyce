@@ -1,25 +1,41 @@
-import { chatGPTSignOutPath, requireChatGPTUser } from '../chatgpt-auth';
+import { env } from 'cloudflare:workers';
+import { chatGPTSignOutPath } from '../chatgpt-auth';
+import { requireDashboardAdmin } from '../dashboard-auth';
+import DashboardControls from './DashboardControls';
+import { addDays, localToday, weekday } from '../../lib/schedule';
 
 export const dynamic = 'force-dynamic';
 
-const week = [
-  { day: 'Seg', hours: '13h — 19h', load: 6, tone: 'wine' },
-  { day: 'Ter', hours: '13h — 19h', load: 6, tone: 'gold' },
-  { day: 'Qua', hours: 'Bloqueado', load: 0, tone: 'off' },
-  { day: 'Qui', hours: '13h — 19h', load: 6, tone: 'navy' },
-  { day: 'Sex', hours: '12h — 15h', load: 3, tone: 'wine' },
-  { day: 'Sáb', hours: '13h — 19h', load: 6, tone: 'gold' },
-];
+type Appointment = { starts_at: string; duration_minutes: number; quoted_price_cents: number; status: string; name: string; service: string; payment_status: string | null };
 
-const appointments = [
-  { time: '13:00', name: 'Marina Alves', service: 'Consulta Essencial', status: 'Pago' },
-  { time: '14:30', name: 'Carla Souza', service: 'Consulta Profunda', status: 'Pendente' },
-  { time: '16:00', name: 'Bianca Lima', service: 'Templo de Vênus', status: 'Pago' },
-];
+async function dashboardData() {
+  const today = localToday();
+  const weekEnd = addDays(today, 7);
+  try {
+    const [appointmentsResult, settingsResult, availabilityResult] = await Promise.all([
+      env.DB.prepare("SELECT a.starts_at, a.duration_minutes, a.quoted_price_cents, a.status, c.name, s.name AS service, (SELECT p.status FROM payments p WHERE p.appointment_id = a.id ORDER BY p.id DESC LIMIT 1) AS payment_status FROM appointments a JOIN customers c ON c.id = a.customer_id JOIN services s ON s.id = a.service_id WHERE a.starts_at >= ? AND a.starts_at < ? ORDER BY a.starts_at").bind(`${today}T00:00:00`, `${weekEnd}T00:00:00`).all<Appointment>(),
+      env.DB.prepare("SELECT key, value FROM settings WHERE key IN ('daily_limit_enabled', 'daily_limit_minutes')").all<{ key: string; value: string }>(),
+      env.DB.prepare('SELECT weekday, start_time, end_time FROM weekly_availability WHERE active = true').all<{ weekday: number; start_time: string; end_time: string }>(),
+    ]);
+    const values = new Map(settingsResult.results.map((item) => [item.key, item.value]));
+    const reserved = appointmentsResult.results.filter((item) => item.status === 'pending' || item.status === 'confirmed');
+    const totalMinutes = reserved.reduce((sum, item) => sum + item.duration_minutes, 0);
+    const totalRevenue = reserved.reduce((sum, item) => sum + item.quoted_price_cents, 0);
+    const availableMinutes = availabilityResult.results.reduce((sum, item) => { const [sh, sm] = item.start_time.split(':').map(Number); const [eh, em] = item.end_time.split(':').map(Number); return sum + (eh * 60 + em) - (sh * 60 + sm); }, 0);
+    return { today, appointments: appointmentsResult.results, totalMinutes, totalRevenue, availableMinutes, enabled: values.get('daily_limit_enabled') !== 'false', limit: Number(values.get('daily_limit_minutes') ?? 180) };
+  } catch { return { today, appointments: [], totalMinutes: 0, totalRevenue: 0, availableMinutes: 0, enabled: true, limit: 180 }; }
+}
+
+function money(cents: number) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(cents / 100); }
+function hours(minutes: number) { return `${Math.floor(minutes / 60)}h${minutes % 60 ? ` ${minutes % 60}min` : ''}`; }
 
 export default async function DashboardPage() {
-  const user = await requireChatGPTUser('/painel');
+  const user = await requireDashboardAdmin('/painel');
+  const data = await dashboardData();
   const firstName = user.fullName?.split(' ')[0] ?? 'Joyce';
+  const week = [
+    { day: 'Seg', hours: '13h — 19h', load: 6, tone: 'wine' }, { day: 'Ter', hours: '13h — 19h', load: 6, tone: 'gold' }, { day: 'Qua', hours: 'Bloqueado', load: 0, tone: 'off' }, { day: 'Qui', hours: '13h — 19h', load: 6, tone: 'navy' }, { day: 'Sex', hours: '12h — 15h', load: 3, tone: 'wine' }, { day: 'Sáb', hours: '13h — 19h', load: 6, tone: 'gold' },
+  ];
 
   return (
     <main className="dashboard-shell">
@@ -34,13 +50,13 @@ export default async function DashboardPage() {
       <section className="dash-main">
         <header className="dash-top"><div><p>VISÃO GERAL</p><h1>Boa tarde, {firstName}.</h1></div><div className="dash-user"><span>JM</span><div><strong>Administradora</strong><small>{user.email}</small></div></div></header>
 
-        <div className="notice"><span>✦</span><div><strong>Piloto em desenvolvimento</strong><p>Os dados abaixo demonstram como o painel funcionará. A gravação das alterações será ativada na próxima etapa.</p></div></div>
+        <div className="notice"><span>✦</span><div><strong>Painel conectado</strong><p>Os números abaixo vêm das reservas registradas pelo site. O limite de proteção pode ser alterado aqui.</p></div></div>
 
         <div className="metric-grid" id="financeiro">
-          <article><p>Receita na semana</p><strong>R$ 1.040</strong><small><b>+12%</b> comparado à anterior</small></article>
-          <article><p>Horas reservadas</p><strong>18h 20min</strong><small>de 27 horas disponíveis</small></article>
-          <article><p>Taxa de ocupação</p><strong>67,9%</strong><small>9 horários ainda livres</small></article>
-          <article><p>Receita por hora</p><strong>R$ 170</strong><small>média dos atendimentos</small></article>
+          <article><p>Receita prevista</p><strong>{money(data.totalRevenue)}</strong><small>reservas desta semana</small></article>
+          <article><p>Horas reservadas</p><strong>{hours(data.totalMinutes)}</strong><small>de {hours(data.availableMinutes)} disponíveis</small></article>
+          <article><p>Taxa de ocupação</p><strong>{data.availableMinutes ? `${Math.round(data.totalMinutes / data.availableMinutes * 100)}%` : '0%'}</strong><small>{data.appointments.length} reservas no período</small></article>
+          <article><p>Receita por hora</p><strong>{data.totalMinutes ? money(data.totalRevenue / (data.totalMinutes / 60)) : '—'}</strong><small>média das reservas</small></article>
         </div>
 
         <div className="dash-grid">
@@ -51,10 +67,12 @@ export default async function DashboardPage() {
           </article>
 
           <article className="dash-panel today-panel">
-            <div className="panel-head"><div><p>HOJE</p><h2>3 atendimentos</h2></div><span className="date-chip">SEG · 07</span></div>
-            <div className="appointment-list">{appointments.map((item) => <div className="appointment" key={item.time}><time>{item.time}</time><div><strong>{item.name}</strong><small>{item.service}</small></div><span className={item.status === 'Pago' ? 'paid' : 'pending'}>{item.status}</span></div>)}</div>
+            <div className="panel-head"><div><p>PRÓXIMOS</p><h2>{data.appointments.length} atendimentos</h2></div><span className="date-chip">{data.today.slice(8)}</span></div>
+            <div className="appointment-list">{data.appointments.slice(0, 5).map((item) => <div className="appointment" key={item.starts_at}><time>{item.starts_at.slice(11, 16)}</time><div><strong>{item.name}</strong><small>{item.service}</small></div><span className={item.payment_status === 'paid' ? 'paid' : 'pending'}>{item.payment_status === 'paid' ? 'Pago' : 'Pendente'}</span></div>)}{!data.appointments.length && <p className="empty-panel">Nenhuma reserva registrada ainda.</p>}</div>
             <a href="#agenda-painel">Ver agenda completa →</a>
           </article>
+
+          <DashboardControls initialEnabled={data.enabled} initialMinutes={data.limit} />
 
           <article className="dash-panel services-panel" id="servicos-painel">
             <div className="panel-head"><div><p>SERVIÇOS</p><h2>Consultas ativas</h2></div><button type="button">Editar serviços</button></div>
