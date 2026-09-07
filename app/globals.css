@@ -173,3 +173,26 @@ body { background:#120d24; color:#f8f3ff; }.site-header { background:rgba(18,13,
 .general-pricing { background:linear-gradient(90deg,#201833,#2b1b44); border-left-color:var(--gold); color:#f2ebff; }.general-pricing strong { color:var(--gold-soft); }.calendar-card { background:#f5f2ff; color:#151126; }.booking-service-options button,.special-choice-group button { background:#fbf9ff; }.service-card .service-whatsapp { color:#f4d989; }
 .calendar-card { background:#BFDDF3; }
 .routine-panel { background:#fffdf9; }.routine-panel>p { color:#514a46; font-size:12px; line-height:1.6; margin:0 0 18px; }.limit-on,.limit-off { border-radius:99px; font-size:9px; font-weight:800; padding:7px 9px; }.limit-on { background:#e7f2ea; color:#316341; }.limit-off { background:#f5e6e8; color:#8b2634; }.routine-controls { align-items:center; display:flex; gap:14px; }.routine-controls label { align-items:center; display:flex; font-size:11px; font-weight:700; gap:7px; }.routine-controls input { accent-color:var(--wine); height:16px; width:16px; }.routine-controls select { background:white; border:1px solid #d8ccc0; border-radius:5px; color:#2a2530; font:600 11px var(--font-sans); padding:9px; }.routine-panel>small { color:#716760; display:block; font-size:10px; margin-top:14px; }.empty-panel { color:#716760; font-size:11px; padding:14px 0; }
+
+/* Painel: escala e contraste próprios. O tema escuro do site não deve reduzir a leitura da área de gestão. */
+.dashboard-shell { background:#eee9e3; color:#211b25; }
+.dash-main { color:#211b25; }
+.dash-brand { font-size:25px; }
+.dash-nav a { color:#dce3f2; font-size:15px; font-weight:650; gap:14px; padding:15px 14px; }
+.dash-nav a span { font-size:19px; }
+.dash-sidebar-bottom a { color:#dce3f2; font-size:14px; }
+.dash-top p,.panel-head p { color:#75152c; font-size:11px; }
+.dash-top h1 { color:#211b25; font-size:43px; }
+.dash-user strong { color:#211b25; font-size:14px; }.dash-user small { color:#514a55; font-size:12px; }
+.notice { background:#fff7dc; border-color:#d5a941; padding:17px 19px; }.notice strong { color:#4e0a20; font-size:15px; }.notice p { color:#403848; font-size:13px; line-height:1.5; }
+.metric-grid article,.dash-panel { background:#fff; border-color:#d7cfc6; box-shadow:0 2px 7px rgba(20,13,36,.05); }
+.metric-grid p { color:#514a55; font-size:14px; font-weight:650; }.metric-grid strong { color:#4e0a20; font-size:37px; }.metric-grid small { color:#625a62; font-size:12px; }
+.panel-head h2 { color:#211b25; font-size:28px; }.panel-head button,.schedule-actions button { font-size:12px; padding:10px 14px; }
+.week-day { background:#f2ede7; padding:15px 11px; }.week-day>strong { color:#211b25; font-size:24px; }.week-day>span { color:#4c454d; font-size:12px; font-weight:600; }.week-day small { color:#5e5660; font-size:11px; }
+.date-chip { font-size:12px; padding:9px 12px; }.appointment time { font-size:14px; }.appointment strong { color:#211b25; font-size:14px; }.appointment small { color:#5e5660; font-size:12px; }.appointment>span { font-size:10px; padding:6px 9px; }.today-panel>a { font-size:13px; }
+.mini-services span { color:#5e5660; font-size:11px; }.mini-services strong { color:#211b25; font-size:14px; }.mini-services b { font-size:22px; }
+.routine-panel>p { color:#342e37; font-size:15px; }.limit-on,.limit-off { font-size:12px; padding:8px 11px; }.routine-controls label { color:#211b25; font-size:14px; }.routine-controls select { font-size:14px; padding:10px; }.routine-panel>small,.empty-panel { color:#514a55; font-size:12px; }
+
+@media (max-width:520px) {
+  .dash-top h1 { font-size:34px; }.dash-nav a { font-size:10px; }.metric-grid p { font-size:12px; }.metric-grid strong { font-size:30px; }.metric-grid small { font-size:11px; }.notice strong { font-size:14px; }.notice p { font-size:12px; }.panel-head h2 { font-size:25px; }
+}
