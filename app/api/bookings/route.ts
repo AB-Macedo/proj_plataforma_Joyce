@@ -100,9 +100,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Não foi possível registrar agora. Tente novamente em alguns instantes.' }, { status: 500 });
   }
 
-  const text = service.requiresApproval
-    ? `Olá! Enviei a solicitação ${code} para uma Consulta Livre de ${duration} minutos e aguardo a aprovação.`
-    : `Olá! Fiz a reserva ${code} pelo site e gostaria de receber as orientações para confirmação.`;
+  const formattedPrice = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(priceCents / 100);
+  const text = `Olá! Fiz a reserva ${code} pelo site para ${service.name} (${duration} minutos). Valor: ${formattedPrice}. Quero realizar o pagamento por Pix e enviar o comprovante neste chat.`;
 
   return NextResponse.json({
     ok: true,

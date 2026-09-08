@@ -91,8 +91,8 @@ export default function BookingFlow() {
       <div className="calendar-card booking-success" role="status">
         <span className="success-symbol">✓</span>
         <p className="booking-step">{success.kind === 'request' ? 'SOLICITAÇÃO ENVIADA' : 'HORÁRIO RESERVADO'}</p>
-        <h3>{success.kind === 'request' ? 'Agora vamos analisar o encaixe.' : 'Seu pedido de agendamento foi recebido.'}</h3>
-        <p>Código <strong>{success.code}</strong>. {success.kind === 'request' ? `Após a aprovação, a entrada será de ${formatMoney(success.depositCents ?? 0)} e o restante será pago depois da consulta.` : `Valor: ${formatMoney(success.priceCents)}. Fale conosco para receber as orientações de pagamento e confirmar o horário.`}</p>
+        <h3>Seu pedido de agendamento foi recebido.</h3>
+        <p>Código <strong>{success.code}</strong>. Valor: <strong>{formatMoney(success.priceCents)}</strong>. Continue no WhatsApp para receber a chave PIX e enviar o comprovante.</p>
         <a className="button button-primary" href={success.whatsappUrl} target="_blank" rel="noreferrer">Continuar no WhatsApp</a>
         <button className="reset-booking" type="button" onClick={() => { setSuccess(null); setSelectedStart(''); }}>Fazer outro agendamento</button>
       </div>
@@ -130,7 +130,7 @@ export default function BookingFlow() {
           {(Object.keys(FORMAT_LABELS) as BookingFormat[]).map((item) => <label className={format === item ? 'selected' : ''} key={item}><input checked={format === item} name="format" onChange={() => setFormat(item)} type="radio" value={item} /><span>{item === 'whatsapp' ? '◌' : '☎'}</span><strong>{FORMAT_LABELS[item]}</strong><small>{item === 'whatsapp' ? 'R$ 3,50 por minuto' : 'R$ 4,50 por minuto'}</small></label>)}
         </div>
         <div className="selection-summary"><span>Você selecionou</span><strong>{service.name}</strong><small>{durationLabel} · {FORMAT_LABELS[format]}</small></div>
-        <div className="price-preview"><span>{service.requiresApproval ? 'Valor estimado' : 'Valor do atendimento'}</span><strong>{formatMoney(price)}</strong>{service.requiresApproval && <small>50% ({formatMoney(Math.ceil(price / 2))}) após aprovação · 50% depois</small>}</div>
+        <div className="price-preview"><span>{service.requiresApproval ? 'Valor estimado' : 'Valor do atendimento'}</span><strong>{formatMoney(price)}</strong></div>
         <button className="flow-next" type="button" onClick={() => setStep(3)}><span>Ver datas disponíveis</span><b aria-hidden="true">→</b></button>
       </div>}
 
@@ -156,7 +156,7 @@ export default function BookingFlow() {
         <div className="privacy-notice"><strong>Privacidade e uso dos dados</strong><p>Nome, WhatsApp, e-mail e data de nascimento serão usados somente para identificar sua reserva, entrar em contato e realizar este atendimento. Não serão vendidos ou compartilhados para marketing.</p><p>Você pode pedir acesso, correção ou eliminação dos seus dados pelo WhatsApp. Ao término do tratamento, os dados serão eliminados ou anonimizados nos limites da LGPD, salvo obrigação legal de conservação.</p></div>
         <label className="check-row"><input name="acceptedTerms" required type="checkbox" /><span><strong>Li e concordo com as regras do agendamento e com o uso dos meus dados para esta finalidade.</strong><small>O consentimento pode ser revogado e os direitos sobre seus dados podem ser solicitados pelo WhatsApp.</small></span></label>
         {error && <p className="booking-error" role="alert">{error}</p>}
-        <button className="submit-booking" disabled={submitting} type="submit">{submitting ? 'Registrando…' : service.requiresApproval ? 'Enviar solicitação para aprovação' : 'Solicitar reserva deste horário'}</button>
+        <button className="submit-booking" disabled={submitting} type="submit">{submitting ? 'Registrando…' : service.requiresApproval ? 'Solicitar encaixe e pagar' : 'Reservar e pagar pelo WhatsApp'}</button>
       </div>}
       {!selectedStart && error && <p className="booking-error" role="alert">{error}</p>}
     </form>

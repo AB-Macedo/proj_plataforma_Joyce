@@ -5,7 +5,7 @@ const services = [
   { eyebrow: 'consulta livre', name: 'Consulta livre · 20 min', duration: '20 minutos', price: 'a partir de R$ 70', description: 'Vinte minutos para você fazer as perguntas que desejar e receber as respostas por mensagem, áudio ou ligação.' },
   { eyebrow: 'consulta livre', name: 'Consulta livre · 30 min', duration: '30 minutos', price: 'a partir de R$ 105', description: 'Trinta minutos para conversar com calma e fazer as perguntas que desejar dentro do período.', featured: true },
   { eyebrow: 'leitura temática', name: 'Templo de Vênus', duration: '', price: 'a partir de R$ 50', description: 'Uma abertura completa sobre pensamentos, sentimentos, intenções e a tendência do relacionamento.', note: 'Leitura fechada: não inclui perguntas extras.' },
-  { eyebrow: 'sob aprovação', name: 'Escolha seu tempo', duration: '20 min a 3 horas', price: 'valor calculado', description: 'Você escolhe o tempo que precisa. O encaixe é analisado antes da confirmação e requer 50% de entrada.' },
+  { eyebrow: 'sob aprovação', name: 'Escolha seu tempo', duration: '20 min a 3 horas', price: 'valor calculado', description: 'Você escolhe o tempo que precisa. O encaixe é analisado antes da confirmação.' },
 ];
 
 const specialReadings = [
