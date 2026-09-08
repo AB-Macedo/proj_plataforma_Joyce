@@ -76,7 +76,7 @@ export default function BookingFlow() {
       name: formData.get('name'), whatsapp: formData.get('whatsapp'), email: formData.get('email'),
       birthDate: formData.get('birthDate'),
       wantsCardImages: formData.get('wantsCardImages') === 'on', templeRulesAccepted: formData.get('templeRulesAccepted') === 'on',
-      acceptedTerms: formData.get('acceptedTerms') === 'on', companySite: formData.get('companySite'), formStartedAt,
+      acceptedTerms: formData.get('acceptedTerms') === 'on', formStartedAt,
     };
     try {
       const response = await fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -158,7 +158,6 @@ export default function BookingFlow() {
         <div className="selection-summary final-summary"><span>CONFIRA SUA RESERVA</span><strong>{service.name}</strong><small>{durationLabel} · {FORMAT_LABELS[format]} · {formatMoney(price)}</small></div>
         <p className="booking-step">3 · SEUS DADOS E PREFERÊNCIAS</p>
         <div className="field-grid"><label><span>Nome completo de solteira/o</span><input name="name" required autoComplete="name" placeholder="Informe seu nome completo de solteira/o" /></label><label><span>WhatsApp</span><input name="whatsapp" required inputMode="tel" autoComplete="tel" placeholder="(27) 99999-9999" /></label><label><span>Data de nascimento</span><input name="birthDate" required type="date" autoComplete="bday" /></label><label><span>E-mail <small>(opcional)</small></span><input name="email" type="email" autoComplete="email" /></label></div>
-        <input className="honeypot" name="companySite" tabIndex={-1} autoComplete="off" aria-hidden="true" />
         <label className="check-row photo-preference"><input name="wantsCardImages" type="checkbox" /><span><strong>Quero receber fotos das cartas pelo WhatsApp.</strong><small>Se esta opção não for marcada, as imagens não serão enviadas automaticamente.</small></span></label>
         {service.templeRules && <label className="check-row"><input name="templeRulesAccepted" required type="checkbox" /><span><strong>Entendi que o Templo de Vênus não inclui perguntas extras.</strong></span></label>}
         <div className="privacy-notice"><strong>Privacidade e uso dos dados</strong><p>Nome, WhatsApp, e-mail e data de nascimento serão usados somente para identificar sua reserva, entrar em contato e realizar este atendimento. Não serão vendidos ou compartilhados para marketing.</p><p>Você pode pedir acesso, correção ou eliminação dos seus dados pelo WhatsApp. Ao término do tratamento, os dados serão eliminados ou anonimizados nos limites da LGPD, salvo obrigação legal de conservação.</p></div>
