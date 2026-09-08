@@ -2,7 +2,7 @@ import { env } from 'cloudflare:workers';
 import { chatGPTSignOutPath } from '../chatgpt-auth';
 import { requireDashboardAdmin } from '../dashboard-auth';
 import DashboardControls from './DashboardControls';
-import DashboardWorkspace from './DashboardWorkspace';
+import DashboardWorkspace, { type DashboardSection } from './DashboardWorkspace';
 import { addDays, localToday } from '../../lib/schedule';
 
 export const dynamic = 'force-dynamic';
@@ -30,35 +30,40 @@ async function dashboardData() {
 function money(cents: number) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(cents / 100); }
 function hours(minutes: number) { return `${Math.floor(minutes / 60)}h${minutes % 60 ? ` ${minutes % 60}min` : ''}`; }
 
-export default async function DashboardPage() {
+const sections: Array<{ key: DashboardSection; label: string; icon: string }> = [
+  { key: 'visao-geral', label: 'Visão geral', icon: '⌂' }, { key: 'agenda', label: 'Agenda', icon: '□' }, { key: 'servicos', label: 'Serviços', icon: '✦' }, { key: 'clientes', label: 'Clientes', icon: '♙' }, { key: 'financeiro', label: 'Financeiro', icon: '◌' }, { key: 'mensagens', label: 'Mensagens', icon: '✉' }, { key: 'feedbacks', label: 'Feedbacks', icon: '♡' },
+];
+
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ aba?: string }> }) {
   const user = await requireDashboardAdmin('/painel');
   const data = await dashboardData();
+  const params = await searchParams;
+  const section = sections.some((item) => item.key === params.aba) ? params.aba as DashboardSection : 'visao-geral';
+  const current = sections.find((item) => item.key === section)!;
   const firstName = user.fullName?.split(' ')[0] ?? 'Joyce';
   return (
     <main className="dashboard-shell">
       <aside className="dash-sidebar">
         <a className="brand dash-brand" href="/"><span className="brand-mark">J</span><span>Joyce Magia</span></a>
-        <nav className="dash-nav" aria-label="Navegação do painel">
-          <a className="active" href="/painel"><span>⌂</span>Visão geral</a><a href="#agenda-painel"><span>□</span>Agenda</a><a href="#servicos-painel"><span>✦</span>Serviços</a><a href="#clientes"><span>♙</span>Clientes</a><a href="#financeiro"><span>◌</span>Financeiro</a><a href="#mensagens"><span>✉</span>Mensagens</a>
-        </nav>
+        <nav className="dash-nav" aria-label="Navegação do painel">{sections.map((item) => <a className={item.key === section ? 'active' : ''} href={item.key === 'visao-geral' ? '/painel' : `/painel?aba=${item.key}`} key={item.key}><span>{item.icon}</span>{item.label}</a>)}</nav>
         <div className="dash-sidebar-bottom"><a href="/">Ver site público ↗</a><a href={chatGPTSignOutPath('/')}>Sair</a></div>
       </aside>
 
       <section className="dash-main">
-        <header className="dash-top"><div><p>VISÃO GERAL</p><h1>Boa tarde, {firstName}.</h1></div><div className="dash-user"><span>JM</span><div><strong>Administradora</strong><small>{user.email}</small></div></div></header>
+        <header className="dash-top"><div><p>{current.label.toUpperCase()}</p><h1>{section === 'visao-geral' ? `Boa tarde, ${firstName}.` : current.label}</h1></div><div className="dash-user"><span>JM</span><div><strong>Administradora</strong><small>{user.email}</small></div></div></header>
 
-        <div className="notice"><span>✦</span><div><strong>Painel conectado</strong><p>Os números abaixo vêm das reservas registradas pelo site. O limite de proteção pode ser alterado aqui.</p></div></div>
+        {section === 'visao-geral' && <><div className="notice"><span>✦</span><div><strong>Painel conectado</strong><p>Aqui está um resumo da semana. Use o menu ao lado para administrar agenda, serviços e reservas.</p></div></div>
 
         <div className="metric-grid" id="financeiro">
           <article><p>Receita prevista</p><strong>{money(data.totalRevenue)}</strong><small>reservas desta semana</small></article>
           <article><p>Horas reservadas</p><strong>{hours(data.totalMinutes)}</strong><small>de {hours(data.availableMinutes)} disponíveis</small></article>
           <article><p>Taxa de ocupação</p><strong>{data.availableMinutes ? `${Math.round(data.totalMinutes / data.availableMinutes * 100)}%` : '0%'}</strong><small>{data.appointments.length} reservas no período</small></article>
           <article><p>Receita por hora</p><strong>{data.totalMinutes ? money(data.totalRevenue / (data.totalMinutes / 60)) : '—'}</strong><small>média das reservas</small></article>
-        </div>
+        </div></>}
 
         <div className="dash-grid">
-          <DashboardWorkspace />
-          <DashboardControls initialEnabled={data.enabled} initialMinutes={data.limit} />
+          <DashboardWorkspace section={section} />
+          {section === 'visao-geral' && <DashboardControls initialEnabled={data.enabled} initialMinutes={data.limit} />}
         </div>
       </section>
     </main>
