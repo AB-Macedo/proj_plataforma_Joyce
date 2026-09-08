@@ -151,6 +151,15 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ ok: true, calendarMessage: calendar.message, calendarError: calendar.error });
   }
 
+  if (action === 'calendar-sync') {
+    const id = Number(body.id);
+    if (!Number.isInteger(id)) return NextResponse.json({ error: 'Reserva inválida.' }, { status: 400 });
+    const appointment = await env.DB.prepare("SELECT a.id, a.starts_at, a.ends_at, a.booking_code, a.google_event_id, a.format, a.wants_card_images, a.status, c.name, c.whatsapp, s.name AS service, (SELECT p.status FROM payments p WHERE p.appointment_id=a.id ORDER BY p.id DESC LIMIT 1) AS payment_status FROM appointments a JOIN customers c ON c.id=a.customer_id JOIN services s ON s.id=a.service_id WHERE a.id=?").bind(id).first<CalendarAppointment & { status: string; payment_status: string | null }>();
+    if (!appointment) return NextResponse.json({ error: 'Reserva não encontrada.' }, { status: 404 });
+    const calendar = await syncCalendar(appointment, appointment.status, appointment.payment_status ?? 'pending');
+    return NextResponse.json({ ok: true, calendarMessage: calendar.message, calendarError: calendar.error });
+  }
+
   if (action === 'template') {
     const id = Number(body.id);
     const title = text(body.title, 100);

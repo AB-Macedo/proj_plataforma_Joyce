@@ -36,6 +36,17 @@ export default function DashboardWorkspace({ section }: { section: DashboardSect
   }
 
   useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    if (section === 'visao-geral') return;
+    const refresh = async () => {
+      try {
+        const response = await fetch('/api/admin/management');
+        if (response.ok) setData(await response.json() as Data);
+      } catch { /* A próxima tentativa automática mantém o painel atualizado. */ }
+    };
+    const timer = window.setInterval(() => void refresh(), 15000);
+    return () => window.clearInterval(timer);
+  }, [section]);
 
   async function save(action: string, payload: Record<string, unknown>, message: string) {
     setStatus('Salvando…');
@@ -71,7 +82,7 @@ export default function DashboardWorkspace({ section }: { section: DashboardSect
     {section === 'clientes' && <article className="dash-panel appointments-panel" id="clientes">
       <div className="panel-head"><div><p>RESERVAS E CLIENTES</p><h2>Acompanhe cada atendimento</h2></div></div>
       <p className="photo-help">✦ O selo <strong>Enviar fotos</strong> indica que a cliente autorizou receber as imagens das cartas pelo WhatsApp.</p>
-      <div className="admin-table">{data.appointments.length ? data.appointments.map((item) => <div className="admin-row" key={item.id}><div><strong>{item.name}</strong><small>{item.service} · {item.starts_at.replace('T', ' às ')}</small>{Boolean(item.wants_card_images) && <span className="photo-badge">✦ Enviar fotos</span>}{item.google_event_id && <span className="calendar-badge">◷ Google Agenda</span>}</div><a href={`https://wa.me/${item.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">WhatsApp</a><select aria-label={`Status de ${item.name}`} value={item.status} onChange={(event) => void save('appointment', { id: item.id, status: event.target.value, paymentStatus: item.payment_status ?? 'pending' }, 'Status da reserva atualizado.')}><option value="pending">Pendente</option><option value="confirmed">Confirmada</option><option value="completed">Concluída</option><option value="cancelled">Cancelada</option><option value="no_show">Não compareceu</option></select><select aria-label={`Pagamento de ${item.name}`} value={item.payment_status ?? 'pending'} onChange={(event) => void save('appointment', { id: item.id, status: item.status, paymentStatus: event.target.value }, 'Pagamento atualizado.')}><option value="pending">Pagamento pendente</option><option value="paid">Pago</option><option value="refunded">Estornado</option><option value="cancelled">Cancelado</option></select></div>) : <p className="empty-panel">Nenhuma reserva enviada ainda.</p>}</div>
+      <p className="auto-refresh-note">Atualização automática ativa: novas reservas aparecem aqui em até 15 segundos.</p><div className="admin-table">{data.appointments.length ? data.appointments.map((item) => <div className="admin-row" key={item.id}><div><strong>{item.name}</strong><small>{item.service} · {item.starts_at.replace('T', ' às ')}</small>{Boolean(item.wants_card_images) && <span className="photo-badge">✦ Enviar fotos</span>}{item.google_event_id && <span className="calendar-badge">◷ Google Agenda</span>}</div><a href={`https://wa.me/${item.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">WhatsApp</a><select aria-label={`Status de ${item.name}`} value={item.status} onChange={(event) => void save('appointment', { id: item.id, status: event.target.value, paymentStatus: item.payment_status ?? 'pending' }, 'Status da reserva atualizado.')}><option value="pending">Pendente</option><option value="confirmed">Confirmada</option><option value="completed">Concluída</option><option value="cancelled">Cancelada</option><option value="no_show">Não compareceu</option></select><select aria-label={`Pagamento de ${item.name}`} value={item.payment_status ?? 'pending'} onChange={(event) => void save('appointment', { id: item.id, status: item.status, paymentStatus: event.target.value }, 'Pagamento atualizado.')}><option value="pending">Pagamento pendente</option><option value="paid">Pago</option><option value="refunded">Estornado</option><option value="cancelled">Cancelado</option></select>{!item.google_event_id && (item.status === 'confirmed' || item.status === 'completed') && item.payment_status === 'paid' && <button type="button" className="calendar-sync-button" onClick={() => void save('calendar-sync', { id: item.id }, 'Sincronização solicitada.')}>Sincronizar agenda</button>}</div>) : <p className="empty-panel">Nenhuma reserva enviada ainda.</p>}</div>
       <h3 className="subsection-title">Clientes cadastradas</h3><div className="customer-list">{data.customers.length ? data.customers.map((customer) => <div key={customer.id}><strong>{customer.name}</strong><span>{customer.whatsapp}</span><small>{customer.bookings} reserva(s)</small></div>) : <p className="empty-panel">Os dados enviados pelo agendamento aparecerão aqui.</p>}</div>
       <p className="workspace-status" aria-live="polite">{status}</p>
     </article>}
