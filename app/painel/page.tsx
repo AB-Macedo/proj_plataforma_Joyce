@@ -44,13 +44,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   return (
     <main className="dashboard-shell">
       <aside className="dash-sidebar">
-        <a className="brand dash-brand" href="/"><span className="brand-mark">J</span><span>Joyce Magia</span></a>
+        <a className="brand dash-brand" href="/"><span className="brand-mark">M</span><span>Magia Selenne</span></a>
         <nav className="dash-nav" aria-label="Navegação do painel">{sections.map((item) => <a className={item.key === section ? 'active' : ''} href={item.key === 'visao-geral' ? '/painel' : `/painel?aba=${item.key}`} key={item.key}><span>{item.icon}</span>{item.label}</a>)}</nav>
         <div className="dash-sidebar-bottom"><a href="/">Ver site público ↗</a><a href={chatGPTSignOutPath('/')}>Sair</a></div>
       </aside>
 
       <section className="dash-main">
-        <header className="dash-top"><div><p>{current.label.toUpperCase()}</p><h1>{section === 'visao-geral' ? `Boa tarde, ${firstName}.` : current.label}</h1></div><div className="dash-user"><span>JM</span><div><strong>Administradora</strong><small>{user.email}</small></div></div></header>
+        <header className="dash-top"><div><p>{current.label.toUpperCase()}</p><h1>{section === 'visao-geral' ? `Boa tarde, ${firstName}.` : current.label}</h1></div><div className="dash-user"><span>MS</span><div><strong>Administradora</strong><small>{user.email}</small></div></div></header>
 
         {section === 'visao-geral' && <><div className="notice"><span>✦</span><div><strong>Painel conectado</strong><p>Aqui está um resumo da semana. Use o menu ao lado para administrar agenda, serviços e reservas.</p></div></div>
 

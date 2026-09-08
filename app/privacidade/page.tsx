@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 
-export const metadata: Metadata = { title: 'Privacidade e uso de dados | Joyce Magia' };
+export const metadata: Metadata = { title: 'Privacidade e uso de dados | Magia Selenne' };
 
 export default function PrivacyPage() {
   return <main className="privacy-page">
-    <header className="privacy-header"><a className="brand" href="/"><span className="brand-mark">J</span><span>Joyce Magia</span></a><a href="/" className="text-link">← Voltar ao início</a></header>
+    <header className="privacy-header"><a className="brand" href="/"><span className="brand-mark">M</span><span>Magia Selenne</span></a><a href="/" className="text-link">← Voltar ao início</a></header>
     <article className="privacy-content">
       <p className="kicker"><span /> Privacidade e uso de dados</p>
       <h1>Seu atendimento, com cuidado também com seus dados.</h1>

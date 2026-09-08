@@ -7,16 +7,16 @@ const sans = Manrope({ variable: '--font-sans', subsets: ['latin'], weight: ['40
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://joymagia-piloto.anabiamacedo10.chatgpt.site'),
-  title: 'Joyce Magia | Consultas e agendamentos',
+  title: 'Magia Selenne | Consultas e agendamentos',
   description: 'Escolha sua consulta e encontre um horário para uma leitura conduzida com cuidado, presença e clareza.',
   openGraph: {
-    title: 'Joyce Magia | Cartas, escuta e direção',
+    title: 'Magia Selenne | Cartas, escuta e direção',
     description: 'Consultas online com horário reservado, cuidado e clareza.',
-    images: [{ url: '/og.png', width: 1732, height: 909, alt: 'Joyce Magia — Cartas, escuta e direção' }],
+    images: [{ url: '/og.png', width: 1732, height: 909, alt: 'Magia Selenne — Cartas, escuta e direção' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Joyce Magia | Cartas, escuta e direção',
+    title: 'Magia Selenne | Cartas, escuta e direção',
     description: 'Consultas online com horário reservado, cuidado e clareza.',
     images: ['/og.png'],
   },

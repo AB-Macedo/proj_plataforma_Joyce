@@ -53,7 +53,7 @@ async function syncCalendar(appointment: CalendarAppointment, status: string, pa
         secret: bridge.secret,
         action,
         eventId: appointment.google_event_id,
-        title: `Joyce Magia — ${appointment.service}`,
+        title: `Magia Selenne — ${appointment.service}`,
         startsAt: appointment.starts_at,
         endsAt: appointment.ends_at,
         description: `Reserva ${appointment.booking_code}\nCliente: ${appointment.name}\nWhatsApp: ${appointment.whatsapp}\nFormato: ${appointment.format === 'call' ? 'Ligação' : 'Mensagens e áudios'}\nFotos das cartas: ${appointment.wants_card_images ? 'Solicitadas' : 'Não solicitadas'}`,

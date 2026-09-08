@@ -1,5 +1,5 @@
 /**
- * Ponte privada entre Joyce Magia e o Google Agenda.
+ * Ponte privada entre Magia Selenne e o Google Agenda.
  * Configure CALENDAR_ID ("primary") e BRIDGE_SECRET nas Propriedades do script.
  */
 function doPost(e) {

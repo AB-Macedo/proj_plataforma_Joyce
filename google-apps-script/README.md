@@ -1,4 +1,4 @@
-# Conectar o Google Agenda da Joyce Magia
+# Conectar o Google Agenda da Magia Selenne
 
 Esta é uma ponte privada: o site só a usa quando a reserva estiver marcada como **Confirmada** e **Pago** no painel. Nascimento não é enviado ao calendário.
 
