@@ -17,7 +17,7 @@ type BookingBody = {
   wantsCardImages?: boolean;
   templeRulesAccepted?: boolean;
   acceptedTerms?: boolean;
-  website?: string;
+  companySite?: string;
   formStartedAt?: number;
 };
 
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Não foi possível ler os dados enviados.' }, { status: 400 });
   }
 
-  if (body.website) return NextResponse.json({ ok: true });
+  if (body.companySite) return NextResponse.json({ error: 'Não foi possível concluir sua reserva. Atualize a página e tente novamente.' }, { status: 400 });
   if (!body.formStartedAt || Date.now() - body.formStartedAt < 1500 || Date.now() - body.formStartedAt > 7_200_000) {
     return NextResponse.json({ error: 'Atualize a página e tente novamente.' }, { status: 400 });
   }
