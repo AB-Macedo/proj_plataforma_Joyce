@@ -27,6 +27,13 @@ O e-mail da desenvolvedora poderá ser usado para validar o Google Agenda. Para 
 - Trimestral: revisar usuários, integrações e permissões.
 - Antes de grandes mudanças: gerar backup/exportação e registrar a alteração.
 
+## Catálogo de serviços
+
+- Para editar ou pausar um atendimento, abrir **Serviços** no painel e tocar no card correspondente.
+- Pausar não exclui o serviço nem apaga reservas antigas; é indicado para férias, pausa temporária ou teste de formato.
+- Para criar um atendimento, usar **Adicionar serviço** e preencher nome, descrição, preço e duração.
+- Antes de divulgar um serviço novo, confirmar se ele já foi conectado ao fluxo público de agendamento. Os serviços iniciais estão conectados; a publicação automática de novos serviços é uma melhoria planejada.
+
 ## Manutenibilidade
 
 - Alterações operacionais comuns devem ocorrer pelo painel, não no código.
@@ -34,4 +41,3 @@ O e-mail da desenvolvedora poderá ser usado para validar o Google Agenda. Para 
 - O projeto deve ter instruções atualizadas de desenvolvimento e publicação.
 - Mudanças no banco devem usar migrações versionadas.
 - Dependências devem ser atualizadas em ciclos controlados e testados.
-

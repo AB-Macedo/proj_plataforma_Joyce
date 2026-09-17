@@ -16,11 +16,12 @@
 
 1. Entra no painel por uma rota protegida.
 2. Visualiza agenda, atendimentos do dia, pendências e resumo financeiro.
-3. Mantém serviços, preços, textos e regras sem editar código.
+3. Mantém serviços, preços, descrições e disponibilidade sem editar código.
 4. Define uma grade semanal padrão e exceções por data/semana.
 5. Bloqueia viagens, provas, pausas ou compromissos pessoais.
 6. Confirma pagamentos e conclui ou cancela atendimentos.
 7. Consulta horas disponibilizadas, vendidas e receita por hora.
+8. Pausa ou reativa temporariamente um serviço, sem apagar atendimentos já registrados.
 
 ## Regras iniciais
 
@@ -33,6 +34,8 @@
 - Exceções por data têm prioridade sobre a grade padrão.
 - Cancelamentos preservam o histórico financeiro e operacional.
 - Valores monetários são armazenados em centavos para evitar erros de arredondamento.
+- Um serviço pausado não perde o histórico; ele apenas deixa de aceitar novos agendamentos.
+- O selo “Enviar fotos” identifica reservas em que a cliente autorizou receber imagens das cartas por WhatsApp.
 
 ## Indicadores do painel
 
@@ -49,4 +52,3 @@
 - Emissão fiscal e contabilidade.
 - Bot de inteligência artificial para interpretar conversas.
 - Automação não oficial que simule o WhatsApp Web.
-

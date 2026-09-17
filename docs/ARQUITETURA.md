@@ -26,7 +26,7 @@ O projeto será hospedado online. O desktop de quem desenvolveu não precisará 
 ### Google Agenda
 
 - O banco da plataforma é a fonte de verdade do agendamento.
-- Uma reserva confirmada cria ou atualiza um evento no calendário dedicado.
+- Uma reserva confirmada e marcada como paga cria ou atualiza um evento no calendário dedicado.
 - Eventos ocupados do Google podem ser consultados para evitar conflitos.
 - Identificadores externos serão armazenados para cancelamento e sincronização segura.
 - Credenciais nunca entram no Git; serão configuradas como segredos da hospedagem.
@@ -48,6 +48,13 @@ O projeto será hospedado online. O desktop de quem desenvolveu não precisará 
 - Webhooks registram entrega e respostas.
 - Não usar bibliotecas que simulam o WhatsApp Web no número comercial.
 
+### Pagamentos
+
+- O piloto atual cria a reserva como pagamento pendente e abre uma mensagem pronta no WhatsApp.
+- A profissional atualiza o pagamento no painel; esse estado é usado na sincronização com Google Agenda.
+- A próxima integração prevista usa um intermediário de pagamento com QR Code Pix dinâmico e webhook para atualizar esse estado automaticamente.
+- Credenciais de pagamento ficam apenas nos segredos da hospedagem.
+
 ## Modelo de dados planejado
 
 - `services`: nome, descrição, preço, duração pública e nota interna.
@@ -68,4 +75,3 @@ O projeto será hospedado online. O desktop de quem desenvolveu não precisará 
 - Manter chaves e tokens exclusivamente em segredos da hospedagem.
 - Registrar estados de pagamento, sem armazenar dados completos de cartão.
 - Prever exportação e cópia de segurança para reduzir dependência do fornecedor.
-

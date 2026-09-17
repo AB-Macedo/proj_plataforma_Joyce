@@ -1,24 +1,23 @@
 # Magia Theia — plataforma de atendimentos
 
-Piloto de uma plataforma online para organizar os atendimentos de cartomancia da Joyce, reduzir o trabalho manual no WhatsApp e dar visibilidade sobre agenda, clientes e caixa.
+Plataforma pública de agendamento e painel administrativo para os atendimentos online da Magia Theia. O objetivo é reduzir o trabalho manual no WhatsApp sem perder o cuidado com cada cliente.
 
-## Objetivos do piloto
+## O que já está funcionando
 
-- Disponibilizar serviços e horários em uma página pública responsiva.
-- Permitir que a profissional altere a disponibilidade a cada semana.
-- Evitar conflitos e atendimentos sem agendamento.
-- Espelhar os compromissos no Google Agenda.
-- Oferecer um painel utilizável no celular e no navegador.
-- Registrar recebimentos e indicadores de horas, ocupação e receita.
-- Preparar a base para uma futura loja de perfumaria e produtos naturais.
+- Site público responsivo, com catálogo, agenda e formulário de reserva.
+- Painel administrativo protegido em `/painel`, utilizável no celular.
+- Grade semanal, abertura e bloqueio de datas específicas e limite diário de atendimento.
+- Reservas, clientes, filtros por período, clientes recorrentes e status de pagamento.
+- Selo para clientes que solicitaram fotos das cartas e feedback privado no painel.
+- Sincronização com Google Agenda quando uma reserva está confirmada e paga.
+- Catálogo de serviços: editar serviços existentes, pausar/reativar temporariamente e criar novos registros pelo painel.
 
-## Serviços iniciais
+## Serviços e pagamentos
 
-| Serviço | Duração reservada | Preço | Observação interna |
-| --- | ---: | ---: | --- |
-| Consulta por mensagem ou áudio | 20 min | R$ 70,00 | R$ 3,50/min |
-| Consulta por áudio | 30 min | R$ 105,00 | R$ 3,50/min |
-| Templo de Vênus | 20 min | R$ 50,00 | Atendimento não deve ultrapassar 17 min |
+- Serviços pausados preservam o histórico, mas deixam de aceitar novas reservas.
+- Nome, descrição, duração e valores podem ser ajustados pelo painel.
+- Novos serviços ficam registrados no catálogo administrativo. A exibição automática de serviços totalmente novos no fluxo público de agendamento é uma próxima melhoria; os serviços iniciais já estão conectados.
+- Hoje a cliente é encaminhada ao WhatsApp com uma mensagem pronta para combinar o Pix e enviar comprovante. A próxima evolução planejada é QR Code Pix automático via intermediário de pagamento.
 
 ## Disponibilidade semanal padrão
 
@@ -32,7 +31,11 @@ Piloto de uma plataforma online para organizar os atendimentos de cartomancia da
 | Sábado | 13h–19h |
 | Domingo | sem atendimento |
 
-O padrão soma 27 horas. Cada semana poderá sobrescrever esses horários, bloquear viagens e provas, ou abrir horários excepcionais.
+O painel permite substituir esses horários, pausar dias e cadastrar pausas ou horários extras em datas específicas.
+
+## Publicação e propriedade
+
+O piloto está publicado em ChatGPT Sites. O endereço atual pode receber um domínio próprio quando ele for registrado e apontado no DNS. Domínio, contas de pagamento, Google Agenda e futuras contas comerciais devem estar em nome da profissional.
 
 ## Documentação
 
@@ -41,7 +44,3 @@ O padrão soma 27 horas. Cada semana poderá sobrescrever esses horários, bloqu
 - [Roadmap](docs/ROADMAP.md)
 - [Decisões do projeto](docs/DECISOES.md)
 - [Operação e manutenção](docs/OPERACAO_E_MANUTENCAO.md)
-
-## Estado atual
-
-Em construção. A primeira entrega é um piloto navegável com site público, seleção de serviço e uma prévia do painel administrativo. Persistência, autenticação administrativa, Google Agenda e WhatsApp oficial serão ativados por etapas.
