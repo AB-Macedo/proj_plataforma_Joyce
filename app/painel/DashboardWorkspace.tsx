@@ -14,6 +14,17 @@ export type DashboardSection = 'visao-geral' | 'agenda' | 'servicos' | 'clientes
 
 const dayLabels = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 const money = (cents: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
+const phoneKey = (value: string) => value.replace(/\D/g, '');
+const dateKey = (value: string) => value.slice(0, 10);
+
+function dateRangeFor(filter: 'all' | 'today' | 'week' | 'upcoming' | 'past') {
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const monday = new Date(today); monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+  const toKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return { todayKey, mondayKey: toKey(monday), sundayKey: toKey(sunday), filter };
+}
 
 export default function DashboardWorkspace({ section }: { section: DashboardSection }) {
   const [data, setData] = useState<Data | null>(null);
@@ -23,6 +34,10 @@ export default function DashboardWorkspace({ section }: { section: DashboardSect
   const [exception, setException] = useState({ date: '', kind: 'blocked', start: '', end: '', reason: '' });
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [editingWeek, setEditingWeek] = useState(false);
+  const [clientSearch, setClientSearch] = useState('');
+  const [periodFilter, setPeriodFilter] = useState<'all' | 'today' | 'week' | 'upcoming' | 'past'>('all');
+  const [recurrenceFilter, setRecurrenceFilter] = useState<'all' | 'first' | 'repeat'>('all');
+  const [appointmentStatusFilter, setAppointmentStatusFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show'>('all');
 
   async function load() {
     const response = await fetch('/api/admin/management');
@@ -59,6 +74,28 @@ export default function DashboardWorkspace({ section }: { section: DashboardSect
   }
 
   const activeServices = useMemo(() => data?.services.filter((item) => item.active) ?? [], [data]);
+  const customerBookingsByPhone = useMemo(() => new Map((data?.customers ?? []).map((customer) => [phoneKey(customer.whatsapp), customer.bookings])), [data]);
+  const filteredAppointments = useMemo(() => {
+    if (!data) return [];
+    const query = clientSearch.trim().toLocaleLowerCase('pt-BR');
+    const range = dateRangeFor(periodFilter);
+    return data.appointments.filter((item) => {
+      const itemDate = dateKey(item.starts_at);
+      const matchesSearch = !query || item.name.toLocaleLowerCase('pt-BR').includes(query) || phoneKey(item.whatsapp).includes(phoneKey(query));
+      const matchesPeriod = range.filter === 'all' || (range.filter === 'today' && itemDate === range.todayKey) || (range.filter === 'week' && itemDate >= range.mondayKey && itemDate <= range.sundayKey) || (range.filter === 'upcoming' && itemDate >= range.todayKey) || (range.filter === 'past' && itemDate < range.todayKey);
+      const bookings = customerBookingsByPhone.get(phoneKey(item.whatsapp)) ?? 1;
+      const matchesRecurrence = recurrenceFilter === 'all' || (recurrenceFilter === 'repeat' ? bookings > 1 : bookings <= 1);
+      const matchesStatus = appointmentStatusFilter === 'all' || item.status === appointmentStatusFilter;
+      return matchesSearch && matchesPeriod && matchesRecurrence && matchesStatus;
+    });
+  }, [data, clientSearch, periodFilter, recurrenceFilter, appointmentStatusFilter, customerBookingsByPhone]);
+  const filteredCustomerPhones = useMemo(() => new Set(filteredAppointments.map((item) => phoneKey(item.whatsapp))), [filteredAppointments]);
+  const filteredCustomers = useMemo(() => {
+    if (!data) return [];
+    const query = clientSearch.trim().toLocaleLowerCase('pt-BR');
+    const shouldFollowAppointments = periodFilter !== 'all' || recurrenceFilter !== 'all' || appointmentStatusFilter !== 'all';
+    return data.customers.filter((customer) => (!query || customer.name.toLocaleLowerCase('pt-BR').includes(query) || phoneKey(customer.whatsapp).includes(phoneKey(query))) && (!shouldFollowAppointments || filteredCustomerPhones.has(phoneKey(customer.whatsapp))));
+  }, [data, clientSearch, periodFilter, recurrenceFilter, appointmentStatusFilter, filteredCustomerPhones]);
   if (section === 'visao-geral') return null;
   if (!data) return <article className="dash-panel workspace-loading"><p>{status || 'Carregando ferramentas do painel…'}</p></article>;
 
@@ -82,8 +119,11 @@ export default function DashboardWorkspace({ section }: { section: DashboardSect
     {section === 'clientes' && <article className="dash-panel appointments-panel" id="clientes">
       <div className="panel-head"><div><p>RESERVAS E CLIENTES</p><h2>Acompanhe cada atendimento</h2></div></div>
       <p className="photo-help">✦ O selo <strong>Enviar fotos</strong> indica que a cliente autorizou receber as imagens das cartas pelo WhatsApp.</p>
-      <p className="auto-refresh-note">Atualização automática ativa: novas reservas aparecem aqui em até 15 segundos.</p><div className="admin-table">{data.appointments.length ? data.appointments.map((item) => <div className="admin-row" key={item.id}><div><strong>{item.name}</strong><small>{item.service} · {item.starts_at.replace('T', ' às ')}</small>{Boolean(item.wants_card_images) && <span className="photo-badge">✦ Enviar fotos</span>}{item.google_event_id && <span className="calendar-badge">◷ Google Agenda</span>}</div><a href={`https://wa.me/${item.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">WhatsApp</a><select aria-label={`Status de ${item.name}`} value={item.status} onChange={(event) => void save('appointment', { id: item.id, status: event.target.value, paymentStatus: item.payment_status ?? 'pending' }, 'Status da reserva atualizado.')}><option value="pending">Pendente</option><option value="confirmed">Confirmada</option><option value="completed">Concluída</option><option value="cancelled">Cancelada</option><option value="no_show">Não compareceu</option></select><select aria-label={`Pagamento de ${item.name}`} value={item.payment_status ?? 'pending'} onChange={(event) => void save('appointment', { id: item.id, status: item.status, paymentStatus: event.target.value }, 'Pagamento atualizado.')}><option value="pending">Pagamento pendente</option><option value="paid">Pago</option><option value="refunded">Estornado</option><option value="cancelled">Cancelado</option></select>{!item.google_event_id && (item.status === 'confirmed' || item.status === 'completed') && item.payment_status === 'paid' && <button type="button" className="calendar-sync-button" onClick={() => void save('calendar-sync', { id: item.id }, 'Sincronização solicitada.')}>Sincronizar agenda</button>}</div>) : <p className="empty-panel">Nenhuma reserva enviada ainda.</p>}</div>
-      <h3 className="subsection-title">Clientes cadastradas</h3><div className="customer-list">{data.customers.length ? data.customers.map((customer) => <div key={customer.id}><strong>{customer.name}</strong><span>{customer.whatsapp}</span><small>{customer.bookings} reserva(s)</small></div>) : <p className="empty-panel">Os dados enviados pelo agendamento aparecerão aqui.</p>}</div>
+      <p className="auto-refresh-note">Atualização automática ativa: novas reservas aparecem aqui em até 15 segundos.</p>
+      <div className="client-filters" aria-label="Filtros de clientes e atendimentos"><label>Buscar cliente<input value={clientSearch} onChange={(event) => setClientSearch(event.target.value)} placeholder="Nome ou WhatsApp" /></label><label>Período<select value={periodFilter} onChange={(event) => setPeriodFilter(event.target.value as typeof periodFilter)}><option value="all">Todos os períodos</option><option value="today">Hoje</option><option value="week">Esta semana</option><option value="upcoming">Próximos</option><option value="past">Anteriores</option></select></label><label>Histórico<select value={recurrenceFilter} onChange={(event) => setRecurrenceFilter(event.target.value as typeof recurrenceFilter)}><option value="all">Todas as clientes</option><option value="first">Primeiro atendimento</option><option value="repeat">Clientes recorrentes</option></select></label><label>Situação<select value={appointmentStatusFilter} onChange={(event) => setAppointmentStatusFilter(event.target.value as typeof appointmentStatusFilter)}><option value="all">Todas as situações</option><option value="pending">Pendente</option><option value="confirmed">Confirmada</option><option value="completed">Concluída</option><option value="cancelled">Cancelada</option><option value="no_show">Não compareceu</option></select></label></div>
+      <p className="filter-summary">Mostrando <strong>{filteredAppointments.length}</strong> de {data.appointments.length} atendimento(s) · <strong>{filteredAppointments.filter((item) => (customerBookingsByPhone.get(phoneKey(item.whatsapp)) ?? 1) > 1).length}</strong> de cliente(s) recorrente(s).</p>
+      <div className="admin-table">{filteredAppointments.length ? filteredAppointments.map((item) => <div className="admin-row" key={item.id}><div><strong>{item.name}</strong><small>{item.service} · {item.starts_at.replace('T', ' às ')}</small>{(customerBookingsByPhone.get(phoneKey(item.whatsapp)) ?? 1) > 1 && <span className="repeat-badge">↻ Cliente recorrente</span>}{Boolean(item.wants_card_images) && <span className="photo-badge">✦ Enviar fotos</span>}{item.google_event_id && <span className="calendar-badge">◷ Google Agenda</span>}</div><a href={`https://wa.me/${item.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">WhatsApp</a><select aria-label={`Status de ${item.name}`} value={item.status} onChange={(event) => void save('appointment', { id: item.id, status: event.target.value, paymentStatus: item.payment_status ?? 'pending' }, 'Status da reserva atualizado.')}><option value="pending">Pendente</option><option value="confirmed">Confirmada</option><option value="completed">Concluída</option><option value="cancelled">Cancelada</option><option value="no_show">Não compareceu</option></select><select aria-label={`Pagamento de ${item.name}`} value={item.payment_status ?? 'pending'} onChange={(event) => void save('appointment', { id: item.id, status: item.status, paymentStatus: event.target.value }, 'Pagamento atualizado.')}><option value="pending">Pagamento pendente</option><option value="paid">Pago</option><option value="refunded">Estornado</option><option value="cancelled">Cancelado</option></select>{!item.google_event_id && (item.status === 'confirmed' || item.status === 'completed') && item.payment_status === 'paid' && <button type="button" className="calendar-sync-button" onClick={() => void save('calendar-sync', { id: item.id }, 'Sincronização solicitada.')}>Sincronizar agenda</button>}</div>) : <p className="empty-panel">Nenhum atendimento encontrado com estes filtros.</p>}</div>
+      <h3 className="subsection-title">Clientes cadastradas</h3><p className="customer-list-note">{periodFilter === 'all' && recurrenceFilter === 'all' && appointmentStatusFilter === 'all' ? 'Histórico completo de clientes.' : 'Clientes que aparecem nos atendimentos filtrados acima.'}</p><div className="customer-list">{filteredCustomers.length ? filteredCustomers.map((customer) => <div key={customer.id}><strong>{customer.name}</strong><span>{customer.whatsapp}</span><small>{customer.bookings > 1 ? `Cliente recorrente · ${customer.bookings} atendimentos` : 'Primeiro atendimento'}</small></div>) : <p className="empty-panel">Nenhuma cliente encontrada com estes filtros.</p>}</div>
       <p className="workspace-status" aria-live="polite">{status}</p>
     </article>}
 

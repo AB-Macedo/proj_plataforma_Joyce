@@ -1,4 +1,4 @@
-# Magia Selenne — plataforma de atendimentos
+# Magia Theia — plataforma de atendimentos
 
 Piloto de uma plataforma online para organizar os atendimentos de cartomancia da Joyce, reduzir o trabalho manual no WhatsApp e dar visibilidade sobre agenda, clientes e caixa.
 

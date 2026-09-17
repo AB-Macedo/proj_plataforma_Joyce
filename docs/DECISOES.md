@@ -1,12 +1,12 @@
 # Decisões do projeto
 
-## ADR-001 — nome provisório
+## ADR-001 — nome profissional
 
-**Decisão:** usar Joyce Magia como nome profissional do projeto.
+**Decisão:** usar Magia Theia como nome profissional do projeto.
 
-**Motivo:** permite trabalhar produto e identidade antes do registro do domínio e da escolha da marca definitiva.
+**Motivo:** é o nome oficial definido para a marca e deve orientar a identidade do site, painel e comunicações.
 
-**Consequência:** nome, textos, ícones e cores devem ser centralizados para permitir troca posterior.
+**Consequência:** nome, textos, ícones e integrações passam a usar Magia Theia; o endereço temporário poderá ser trocado por um domínio próprio depois.
 
 ## ADR-002 — disponibilidade variável
 

@@ -2,7 +2,7 @@
 
 ## Fase 0 — fundação e piloto visual
 
-- [x] Definir nome profissional Joyce Magia e paleta inicial.
+- [x] Definir Magia Theia como nome profissional e consolidar a identidade visual.
 - [x] Registrar serviços e disponibilidade inicial.
 - [x] Documentar visão, arquitetura, decisões e manutenção.
 - [ ] Publicar primeira versão navegável em endereço temporário.

@@ -44,7 +44,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   return (
     <main className="dashboard-shell">
       <aside className="dash-sidebar">
-        <a className="brand dash-brand" href="/"><span className="brand-mark">M</span><span>Magia Selenne</span></a>
+        <a className="brand dash-brand" href="/"><span className="brand-mark">M</span><span>Magia Theia</span></a>
         <nav className="dash-nav" aria-label="Navegação do painel">{sections.map((item) => <a className={item.key === section ? 'active' : ''} href={item.key === 'visao-geral' ? '/painel' : `/painel?aba=${item.key}`} key={item.key}><span>{item.icon}</span>{item.label}</a>)}</nav>
         <div className="dash-sidebar-bottom"><a href="/">Ver site público ↗</a><a href={chatGPTSignOutPath('/')}>Sair</a></div>
       </aside>
