@@ -17,6 +17,21 @@ function time(value: unknown) {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(item) ? item : '';
 }
 
+function serviceData(body: Record<string, unknown>) {
+  const name = text(body.name, 80);
+  const description = text(body.description, 450);
+  const duration = Number(body.durationMinutes);
+  const price = Math.round(Number(body.price) * 100);
+  const whatsappRate = Math.round(Number(body.whatsappRate) * 100);
+  const callRate = Math.round(Number(body.callRate) * 100);
+  if (name.length < 2 || !Number.isInteger(duration) || duration < 5 || duration > 180 || !Number.isInteger(price) || price < 0 || !Number.isInteger(whatsappRate) || whatsappRate < 0 || !Number.isInteger(callRate) || callRate < 0) return null;
+  return { name, description, duration, price, whatsappRate, callRate, active: body.active ? 1 : 0 };
+}
+
+function serviceSlug(name: string) {
+  return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 55) || 'novo-atendimento';
+}
+
 function calendarBridge() {
   const runtime = env as RuntimeEnv;
   const url = runtime.CALENDAR_BRIDGE_URL?.trim();
@@ -96,14 +111,21 @@ export async function PATCH(request: NextRequest) {
 
   if (action === 'service') {
     const id = Number(body.id);
-    const name = text(body.name, 80);
-    const description = text(body.description, 450);
-    const duration = Number(body.durationMinutes);
-    const price = Math.round(Number(body.price) * 100);
-    const whatsappRate = Math.round(Number(body.whatsappRate) * 100);
-    const callRate = Math.round(Number(body.callRate) * 100);
-    if (!Number.isInteger(id) || name.length < 2 || !Number.isInteger(duration) || duration < 5 || duration > 180 || !Number.isInteger(price) || price < 0 || !Number.isInteger(whatsappRate) || whatsappRate < 0 || !Number.isInteger(callRate) || callRate < 0) return NextResponse.json({ error: 'Revise os dados do serviço.' }, { status: 400 });
-    await env.DB.prepare('UPDATE services SET name=?, description=?, price_cents=?, whatsapp_rate_cents=?, call_rate_cents=?, duration_minutes=?, active=?, updated_at=? WHERE id=?').bind(name, description, price, whatsappRate, callRate, duration, body.active ? 1 : 0, now, id).run();
+    const service = serviceData(body);
+    if (!Number.isInteger(id) || !service) return NextResponse.json({ error: 'Revise os dados do serviço.' }, { status: 400 });
+    await env.DB.prepare('UPDATE services SET name=?, description=?, price_cents=?, whatsapp_rate_cents=?, call_rate_cents=?, duration_minutes=?, active=?, updated_at=? WHERE id=?').bind(service.name, service.description, service.price, service.whatsappRate, service.callRate, service.duration, service.active, now, id).run();
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'service-create') {
+    const service = serviceData(body);
+    if (!service) return NextResponse.json({ error: 'Revise os dados do novo serviço.' }, { status: 400 });
+    const baseSlug = serviceSlug(service.name);
+    const duplicate = await env.DB.prepare('SELECT id FROM services WHERE slug=? LIMIT 1').bind(baseSlug).first<{ id: number }>();
+    const slug = duplicate ? `${baseSlug}-${Date.now().toString(36).slice(-4)}` : baseSlug;
+    const order = await env.DB.prepare('SELECT COALESCE(MAX(sort_order), 0) + 1 AS next_order FROM services').first<{ next_order: number }>();
+    await env.DB.prepare('INSERT INTO services (slug, name, description, price_cents, whatsapp_rate_cents, call_rate_cents, duration_minutes, active, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(slug, service.name, service.description, service.price, service.whatsappRate, service.callRate, service.duration, service.active, order?.next_order ?? 1, now, now).run();
     return NextResponse.json({ ok: true });
   }
 

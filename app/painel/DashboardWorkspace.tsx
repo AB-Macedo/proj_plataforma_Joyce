@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 type Service = { id: number; slug: string; name: string; description: string; price_cents: number; whatsapp_rate_cents: number; call_rate_cents: number; duration_minutes: number; internal_note: string | null; active: number };
+type ServiceDraft = Omit<Service, 'id' | 'slug' | 'internal_note'> & { id?: number; slug?: string; internal_note?: string | null };
 type Availability = { id?: number; weekday: number; start_time: string; end_time: string; active: number | boolean };
 type Exception = { id: number; date: string; start_time: string | null; end_time: string | null; kind: 'open' | 'blocked'; reason: string | null };
 type Customer = { id: number; name: string; whatsapp: string; email: string | null; birth_date: string | null; created_at: string; bookings: number };
@@ -29,6 +30,7 @@ function dateRangeFor(filter: 'all' | 'today' | 'week' | 'upcoming' | 'past') {
 export default function DashboardWorkspace({ section }: { section: DashboardSection }) {
   const [data, setData] = useState<Data | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [creatingService, setCreatingService] = useState(false);
   const [week, setWeek] = useState<Availability[]>([]);
   const [status, setStatus] = useState('');
   const [exception, setException] = useState({ date: '', kind: 'blocked', start: '', end: '', reason: '' });
@@ -74,6 +76,7 @@ export default function DashboardWorkspace({ section }: { section: DashboardSect
   }
 
   const activeServices = useMemo(() => data?.services.filter((item) => item.active) ?? [], [data]);
+  const newService = (): ServiceDraft => ({ name: '', description: '', price_cents: 0, whatsapp_rate_cents: 350, call_rate_cents: 450, duration_minutes: 20, active: 1 });
   const customerBookingsByPhone = useMemo(() => new Map((data?.customers ?? []).map((customer) => [phoneKey(customer.whatsapp), customer.bookings])), [data]);
   const filteredAppointments = useMemo(() => {
     if (!data) return [];
@@ -112,7 +115,8 @@ export default function DashboardWorkspace({ section }: { section: DashboardSect
     </article>}
 
     {section === 'servicos' && <article className="dash-panel services-panel" id="servicos-painel">
-      <div className="panel-head"><div><p>SERVIÇOS</p><h2>Consultas ativas</h2></div><button type="button" onClick={() => setEditingService(activeServices[0] ?? data.services[0] ?? null)}>Editar serviços</button></div>
+      <div className="panel-head"><div><p>SERVIÇOS</p><h2>Catálogo de atendimentos</h2></div><button type="button" onClick={() => { setCreatingService(true); setEditingService(null); }}>+ Adicionar serviço</button></div>
+      <p className="services-help">Toque em um atendimento para editar. Pausar o serviço o tira temporariamente do site, sem apagar o histórico de reservas.</p>
       <div className="mini-services">{data.services.map((service) => <button type="button" className={`service-admin-card ${service.active ? '' : 'inactive'}`} key={service.id} onClick={() => setEditingService(service)}><span>{service.duration_minutes} min · {service.active ? 'ativo' : 'pausado'}</span><strong>{service.name}</strong><b>{money(service.price_cents)}</b></button>)}</div>
     </article>}
 
@@ -141,7 +145,20 @@ export default function DashboardWorkspace({ section }: { section: DashboardSect
       <div className="feedback-list">{data.feedback.length ? data.feedback.map((item) => <article key={item.id}><div><strong>{'★'.repeat(item.rating)}{'☆'.repeat(5 - item.rating)}</strong><span>{item.name || 'Cliente sem identificação'} · {new Date(item.created_at).toLocaleDateString('pt-BR')}</span></div><p>{item.message}</p><small>{item.contact_allowed ? 'Aceita contato' : 'Não pediu contato'}</small><select aria-label="Status do feedback" value={item.status} onChange={(event) => void save('feedback', { id: item.id, status: event.target.value }, 'Feedback atualizado.')}><option value="new">Novo</option><option value="reviewed">Lido</option><option value="archived">Arquivado</option></select></article>) : <p className="empty-panel">Ainda não há feedbacks enviados.</p>}</div>
     </article>}
 
-    {editingService && <div className="admin-modal" role="dialog" aria-modal="true" aria-label="Editar serviço"><form onSubmit={(event) => { event.preventDefault(); void save('service', { ...editingService, price: editingService.price_cents / 100, whatsappRate: editingService.whatsapp_rate_cents / 100, callRate: editingService.call_rate_cents / 100 }, 'Serviço atualizado.').then((ok) => { if (ok) setEditingService(null); }); }}><div className="modal-head"><h2>Editar serviço</h2><button type="button" onClick={() => setEditingService(null)}>×</button></div><label>Nome<input value={editingService.name} onChange={(event) => setEditingService({ ...editingService, name: event.target.value })} /></label><label>Descrição<textarea value={editingService.description} onChange={(event) => setEditingService({ ...editingService, description: event.target.value })} /></label><div className="modal-grid"><label>Preço base (R$)<input type="number" min="0" step="0.5" value={editingService.price_cents / 100} onChange={(event) => setEditingService({ ...editingService, price_cents: Math.round(Number(event.target.value) * 100) })} /></label><label>Duração (min)<input type="number" min="5" step="5" value={editingService.duration_minutes} onChange={(event) => setEditingService({ ...editingService, duration_minutes: Number(event.target.value) })} /></label><label>Mensagens/áudios (R$/min)<input type="number" min="0" step="0.1" value={editingService.whatsapp_rate_cents / 100} onChange={(event) => setEditingService({ ...editingService, whatsapp_rate_cents: Math.round(Number(event.target.value) * 100) })} /></label><label>Ligação (R$/min)<input type="number" min="0" step="0.1" value={editingService.call_rate_cents / 100} onChange={(event) => setEditingService({ ...editingService, call_rate_cents: Math.round(Number(event.target.value) * 100) })} /></label></div><label className="toggle-label"><input type="checkbox" checked={Boolean(editingService.active)} onChange={(event) => setEditingService({ ...editingService, active: event.target.checked ? 1 : 0 })} /> Atendimento disponível no site</label><button className="dash-primary" type="submit">Salvar alterações</button></form></div>}
+    {(editingService || creatingService) && <ServiceEditor service={editingService ?? newService()} creating={creatingService} close={() => { setEditingService(null); setCreatingService(false); }} save={save} />}
     {editingTemplate && <div className="admin-modal" role="dialog" aria-modal="true" aria-label="Editar mensagem"><form onSubmit={(event) => { event.preventDefault(); void save('template', editingTemplate, 'Texto automático atualizado.').then((ok) => { if (ok) setEditingTemplate(null); }); }}><div className="modal-head"><h2>Editar mensagem</h2><button type="button" onClick={() => setEditingTemplate(null)}>×</button></div><label>Título<input value={editingTemplate.title} onChange={(event) => setEditingTemplate({ ...editingTemplate, title: event.target.value })} /></label><label>Mensagem<textarea value={editingTemplate.body} onChange={(event) => setEditingTemplate({ ...editingTemplate, body: event.target.value })} /></label><label className="toggle-label"><input type="checkbox" checked={Boolean(editingTemplate.active)} onChange={(event) => setEditingTemplate({ ...editingTemplate, active: event.target.checked ? 1 : 0 })} /> Usar este texto</label><button className="dash-primary" type="submit">Salvar texto</button></form></div>}
   </>;
+}
+
+function ServiceEditor({ service, creating, close, save }: { service: ServiceDraft; creating: boolean; close: () => void; save: (action: string, payload: Record<string, unknown>, message: string) => Promise<boolean> }) {
+  const [draft, setDraft] = useState<ServiceDraft>(service);
+  const label = creating ? 'Novo serviço' : 'Editar serviço';
+  return <div className="admin-modal" role="dialog" aria-modal="true" aria-label={label}><form onSubmit={(event) => { event.preventDefault(); void save(creating ? 'service-create' : 'service', { ...draft, price: draft.price_cents / 100, whatsappRate: draft.whatsapp_rate_cents / 100, callRate: draft.call_rate_cents / 100 }, creating ? 'Novo serviço adicionado ao catálogo.' : 'Serviço atualizado.').then((ok) => { if (ok) close(); }); }}>
+    <div className="modal-head"><div><p className="modal-kicker">SERVIÇOS</p><h2>{label}</h2></div><button type="button" aria-label="Fechar" onClick={close}>×</button></div>
+    <label>Nome do atendimento<input required value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="Ex.: Leitura de caminhos" /></label>
+    <label>Descrição que aparecerá no catálogo<textarea value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Explique brevemente o que a cliente recebe." /></label>
+    <div className="modal-grid"><label>Preço base (R$)<input required type="number" min="0" step="0.5" value={draft.price_cents / 100} onChange={(event) => setDraft({ ...draft, price_cents: Math.round(Number(event.target.value) * 100) })} /></label><label>Duração (min)<input required type="number" min="5" step="5" value={draft.duration_minutes} onChange={(event) => setDraft({ ...draft, duration_minutes: Number(event.target.value) })} /></label><label>Mensagens/áudios (R$/min)<input required type="number" min="0" step="0.1" value={draft.whatsapp_rate_cents / 100} onChange={(event) => setDraft({ ...draft, whatsapp_rate_cents: Math.round(Number(event.target.value) * 100) })} /></label><label>Ligação (R$/min)<input required type="number" min="0" step="0.1" value={draft.call_rate_cents / 100} onChange={(event) => setDraft({ ...draft, call_rate_cents: Math.round(Number(event.target.value) * 100) })} /></label></div>
+    <label className="toggle-label"><input type="checkbox" checked={Boolean(draft.active)} onChange={(event) => setDraft({ ...draft, active: event.target.checked ? 1 : 0 })} /> Disponível para agendamento no site</label>
+    <div className="modal-actions"><button className="dash-primary" type="submit">{creating ? 'Adicionar serviço' : 'Salvar alterações'}</button>{!creating && <button className="secondary-action" type="button" onClick={() => setDraft({ ...draft, active: draft.active ? 0 : 1 })}>{draft.active ? 'Pausar temporariamente' : 'Ativar novamente'}</button>}</div>
+  </form></div>;
 }
