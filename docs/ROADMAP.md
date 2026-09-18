@@ -10,7 +10,7 @@
 
 ## Fase 1 — site público e agendamento
 
-- [ ] Página inicial e catálogo de serviços.
+- [x] Página inicial e catálogo de serviços conectados ao painel.
 - [ ] Calendário com horários calculados a partir da disponibilidade.
 - [ ] Formulário de reserva e proteção contra horário duplicado.
 - [ ] Confirmação na tela e por e-mail.

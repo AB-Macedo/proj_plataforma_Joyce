@@ -16,7 +16,7 @@ Plataforma pública de agendamento e painel administrativo para os atendimentos 
 
 - Serviços pausados preservam o histórico, mas deixam de aceitar novas reservas.
 - Nome, descrição, duração e valores podem ser ajustados pelo painel.
-- Novos serviços ficam registrados no catálogo administrativo. A exibição automática de serviços totalmente novos no fluxo público de agendamento é uma próxima melhoria; os serviços iniciais já estão conectados.
+- O catálogo do painel é a fonte do site: criar, editar ou pausar um serviço atualiza a vitrine e as opções do agendamento. Serviços pausados permanecem apenas no histórico.
 - Hoje a cliente é encaminhada ao WhatsApp com uma mensagem pronta para combinar o Pix e enviar comprovante. A próxima evolução planejada é QR Code Pix automático via intermediário de pagamento.
 
 ## Disponibilidade semanal padrão

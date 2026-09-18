@@ -1,21 +1,18 @@
 import BookingFlow from './components/BookingFlow';
 import FeedbackForm from './components/FeedbackForm';
+import { env } from 'cloudflare:workers';
+import { formatMoney } from '../lib/public-services';
 
-const services = [
-  { eyebrow: 'consulta livre', name: 'Consulta livre · 20 min', duration: '20 minutos', price: 'a partir de R$ 70', description: 'Vinte minutos para você fazer as perguntas que desejar e receber as respostas por mensagem, áudio ou ligação.' },
-  { eyebrow: 'consulta livre', name: 'Consulta livre · 30 min', duration: '30 minutos', price: 'a partir de R$ 105', description: 'Trinta minutos para conversar com calma e fazer as perguntas que desejar dentro do período.', featured: true },
-  { eyebrow: 'leitura temática', name: 'Templo de Vênus', duration: '', price: 'a partir de R$ 50', description: 'Uma abertura completa sobre pensamentos, sentimentos, intenções e a tendência do relacionamento.', note: 'Leitura fechada: não inclui perguntas extras.' },
-  { eyebrow: 'sob aprovação', name: 'Escolha seu tempo', duration: '20 min a 3 horas', price: 'valor calculado', description: 'Você escolhe o tempo que precisa. O encaixe é analisado antes da confirmação.' },
-];
+export const dynamic = 'force-dynamic';
+type SiteService = { slug: string; name: string; description: string; price_cents: number; duration_minutes: number };
+const pilotSlugs = new Set(['leitura-amorosa-completa', 'campo-especifico', 'pergunta-objetiva', 'campo-geral']);
+function servicePrice(service: SiteService) { return service.slug === 'consulta-livre' ? 'valor calculado' : `a partir de ${formatMoney(service.price_cents)}`; }
+function serviceDuration(service: SiteService) { return service.slug === 'consulta-livre' ? '20 min a 3 horas' : `${service.duration_minutes} minutos`; }
 
-const specialReadings = [
-  { name: 'Leitura amorosa completa', price: 'R$ 10,00 · piloto', description: 'Pensamentos, sentimentos, intenções e próximos passos da pessoa do seu interesse.' },
-  { name: 'Campo específico', price: 'R$ 10,00 · piloto', description: 'Energia geral, obstáculo e conselho para um aspecto que você deseja compreender melhor.' },
-  { name: 'Pergunta objetiva', price: 'R$ 10,00 · piloto', description: 'Uma pergunta direta e um conselho do baralho sobre o que você pode fazer diante da situação.' },
-  { name: 'Campo geral', price: 'R$ 10,00 · piloto', description: 'Uma abertura para os campos profissional, financeiro, saúde, espiritual e amoroso.' },
-];
-
-export default function Home() {
+export default async function Home() {
+  const result = await env.DB.prepare('SELECT slug, name, description, price_cents, duration_minutes FROM services WHERE active = true ORDER BY sort_order, id').all<SiteService>();
+  const services = result.results.filter((service) => !pilotSlugs.has(service.slug));
+  const specialReadings = result.results.filter((service) => pilotSlugs.has(service.slug));
   return (
     <main>
       <header className="site-header">
@@ -42,22 +39,22 @@ export default function Home() {
 
       <section className="services section" id="consultas">
         <div className="section-heading"><div><p className="kicker"><span /> Escolha sua leitura</p><h2>Um tempo reservado para você</h2></div><p>Escolha o formato que combina com o que você busca hoje.</p></div>
-        <p className="general-pricing">Mensagens e áudios: <strong>R$ 3,50/min</strong> · Ligação: <strong>R$ 4,50/min</strong></p>
+        <p className="general-pricing">Valores e disponibilidade são atualizados diretamente pelo catálogo.</p>
         <div className="service-grid">
           {services.map((service) => (
-            <article className={`service-card ${service.featured ? 'featured' : ''}`} key={service.name}>
-              {service.featured && <span className="popular">Mais escolhida</span>}
-              <p className="service-eyebrow">{service.eyebrow}</p><h3>{service.name}</h3><p className="service-description">{service.description}</p>{service.note && <p className="service-note">{service.note}</p>}
-              <div className={`service-meta ${service.duration ? '' : 'price-only'}`}>{service.duration && <span>{service.duration}</span>}<strong>{service.price}</strong></div>
+            <article className={`service-card ${service.slug === 'consulta-profunda' ? 'featured' : ''}`} key={service.slug}>
+              {service.slug === 'consulta-profunda' && <span className="popular">Mais escolhida</span>}
+              <p className="service-eyebrow">{service.slug === 'consulta-livre' ? 'sob aprovação' : service.slug === 'templo-de-venus' ? 'leitura temática' : 'consulta'}</p><h3>{service.name}</h3><p className="service-description">{service.description || 'Atendimento online com cuidado e espaço para a sua escuta.'}</p>{service.slug === 'templo-de-venus' && <p className="service-note">Leitura fechada: não inclui perguntas extras.</p>}
+              <div className="service-meta"><span>{serviceDuration(service)}</span><strong>{servicePrice(service)}</strong></div>
               <a href="#agenda">Escolher consulta <span aria-hidden="true">→</span></a>
               <a className="service-whatsapp" href={`https://wa.me/5527988043118?text=${encodeURIComponent(`Olá! Tenho uma dúvida sobre ${service.name}.`)}`} target="_blank" rel="noreferrer">Tirar dúvida no WhatsApp</a>
             </article>
           ))}
         </div>
-        <div className="special-readings">
+        {specialReadings.length > 0 && <div className="special-readings">
           <div><p className="kicker"><span /> Outras leituras</p><h3>Leituras especiais do catálogo</h3><p>Para este piloto, todas podem ser agendadas no site pelo valor teste informado.</p></div>
-          <div className="special-grid">{specialReadings.map((reading) => <article key={reading.name}><strong>{reading.name}</strong><em>{reading.price}</em><span>{reading.description}</span><div><a href="#agenda">Agendar pelo site →</a><a href={`https://wa.me/5527988043118?text=${encodeURIComponent(`Olá! Tenho uma dúvida sobre ${reading.name}.`)}`} target="_blank" rel="noreferrer">Tirar dúvida no WhatsApp</a></div></article>)}</div>
-        </div>
+          <div className="special-grid">{specialReadings.map((reading) => <article key={reading.slug}><strong>{reading.name}</strong><em>{formatMoney(reading.price_cents)}</em><span>{reading.description || 'Leitura disponível para agendamento pelo site.'}</span><div><a href="#agenda">Agendar pelo site →</a><a href={`https://wa.me/5527988043118?text=${encodeURIComponent(`Olá! Tenho uma dúvida sobre ${reading.name}.`)}`} target="_blank" rel="noreferrer">Tirar dúvida no WhatsApp</a></div></article>)}</div>
+        </div>}
       </section>
 
       <section className="booking section" id="agenda">

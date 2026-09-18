@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { NextRequest, NextResponse } from 'next/server';
-import { getService, quotePriceCents, type BookingFormat } from '../../../lib/catalog';
+import { decorateService, quoteService, type BookingFormat } from '../../../lib/public-services';
 import { endTimestamp, localToday, validateSlot } from '../../../lib/schedule';
 
 export const dynamic = 'force-dynamic';
@@ -40,9 +40,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Atualize a página e tente novamente.' }, { status: 400 });
   }
 
-  const service = getService(body.service ?? '');
+  const requestedSlug = clean(body.service, 80);
+  const serviceRow = await env.DB.prepare('SELECT id, slug, name, description, price_cents, whatsapp_rate_cents, call_rate_cents, duration_minutes FROM services WHERE slug = ? AND active = true LIMIT 1').bind(requestedSlug).first<{ id: number; slug: string; name: string; description: string; price_cents: number; whatsapp_rate_cents: number; call_rate_cents: number; duration_minutes: number }>();
+  const service = serviceRow ? decorateService(serviceRow) : null;
   const format = body.format as BookingFormat;
-  const duration = service?.durationMinutes ?? Number(body.duration);
+  const duration = service?.requiresApproval ? Number(body.duration) : service?.duration_minutes ?? Number(body.duration);
   const startsAt = clean(body.startsAt, 19);
   const name = clean(body.name, 90);
   const whatsapp = clean(body.whatsapp, 30).replace(/[^0-9+]/g, '');
@@ -50,7 +52,7 @@ export async function POST(request: NextRequest) {
   const birthDate = clean(body.birthDate, 10);
 
   if (!service || !['whatsapp', 'call'].includes(format)) return NextResponse.json({ error: 'Serviço inválido.' }, { status: 400 });
-  if (!Number.isInteger(duration) || duration < service.minDuration || duration > service.maxDuration || duration % 10 !== 0) return NextResponse.json({ error: 'Duração inválida.' }, { status: 400 });
+  if (!Number.isInteger(duration) || duration < (service.requiresApproval ? 20 : 5) || duration > (service.requiresApproval ? 180 : service.duration_minutes) || (service.requiresApproval && duration % 10 !== 0)) return NextResponse.json({ error: 'Duração inválida.' }, { status: 400 });
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00$/.test(startsAt) || startsAt.slice(0, 10) < localToday()) return NextResponse.json({ error: 'Escolha um horário válido.' }, { status: 400 });
   if (name.length < 2 || whatsapp.replace(/\D/g, '').length < 10) return NextResponse.json({ error: 'Informe seu nome e um WhatsApp válido.' }, { status: 400 });
   if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate) || Number.isNaN(new Date(`${birthDate}T12:00:00`).getTime())) return NextResponse.json({ error: 'Informe uma data de nascimento válida.' }, { status: 400 });
@@ -69,7 +71,7 @@ export async function POST(request: NextRequest) {
   const now = new Date().toISOString();
   const end = endTimestamp(startsAt, duration);
   const code = bookingCode();
-  const priceCents = quotePriceCents(service, format, duration);
+  const priceCents = quoteService(service, format, duration);
 
   try {
     let customer = await env.DB.prepare('SELECT id FROM customers WHERE whatsapp = ? ORDER BY id DESC LIMIT 1').bind(whatsapp).first<{ id: number }>();
@@ -80,12 +82,9 @@ export async function POST(request: NextRequest) {
     }
     if (!customer) throw new Error('customer_not_created');
 
-    const serviceRow = await env.DB.prepare('SELECT id FROM services WHERE slug = ? AND active = true LIMIT 1').bind(service.slug).first<{ id: number }>();
-    if (!serviceRow) throw new Error('service_not_found');
-
     if (service.requiresApproval) {
       await env.DB.prepare("INSERT INTO booking_requests (booking_code, customer_id, service_id, preferred_starts_at, preferred_ends_at, format, duration_minutes, quoted_price_cents, deposit_cents, wants_card_images, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'requested', ?, ?)")
-        .bind(code, customer.id, serviceRow.id, startsAt, end, format, duration, priceCents, Math.ceil(priceCents / 2), Boolean(body.wantsCardImages), now, now).run();
+        .bind(code, customer.id, serviceRow.id, startsAt, end, format, duration, priceCents, priceCents, Boolean(body.wantsCardImages), now, now).run();
     } else {
       const appointment = await env.DB.prepare("INSERT INTO appointments (service_id, customer_id, starts_at, ends_at, booking_code, format, duration_minutes, quoted_price_cents, wants_card_images, temple_rules_accepted, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?) RETURNING id")
         .bind(serviceRow.id, customer.id, startsAt, end, code, format, duration, priceCents, Boolean(body.wantsCardImages), Boolean(body.templeRulesAccepted), now, now).first<{ id: number }>();
@@ -106,7 +105,7 @@ export async function POST(request: NextRequest) {
     code,
     kind: service.requiresApproval ? 'request' : 'booking',
     priceCents,
-    depositCents: service.requiresApproval ? Math.ceil(priceCents / 2) : null,
+    depositCents: null,
     whatsappUrl: `https://wa.me/5527988043118?text=${encodeURIComponent(text)}`,
   });
 }
