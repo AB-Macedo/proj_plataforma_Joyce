@@ -104,7 +104,9 @@ export async function buildSchedule(durationMinutes: number): Promise<{ weeks: S
   const currentWeekEnd = `${addDays(currentMonday, 7)}T00:00:00`;
   const bookedMinutes = appointments.filter((item) => item.starts_at < currentWeekEnd).reduce((total, item) => total + item.duration_minutes, 0);
   const occupancy = totalMinutes ? Math.min(bookedMinutes / totalMinutes, 1) : 0;
-  const weekStarts = occupancy >= 0.6 ? [currentMonday, addDays(currentMonday, 7)] : [currentMonday];
+  // A disponibilidade do painel é um padrão semanal recorrente. Mantemos a
+  // semana seguinte pronta sem exigir que a administradora salve novamente.
+  const weekStarts = [currentMonday, addDays(currentMonday, 7)];
 
   const weeks = weekStarts.map((weekStart, weekIndex): ScheduleWeek => {
     const days = Array.from({ length: 6 }, (_, offset): ScheduleDay => {
@@ -137,7 +139,8 @@ export async function buildSchedule(durationMinutes: number): Promise<{ weeks: S
     return { startsOn: weekStart, label: weekLabel(weekStart), occupancy: weekIndex === 0 ? occupancy : 0, days };
   });
 
-  return { weeks, nextWeekLocked: occupancy < 0.6 };
+  const currentWeekHasSlots = weeks[0]?.days.some((day) => day.slots.length > 0) ?? false;
+  return { weeks: currentWeekHasSlots ? weeks : weeks.slice(1), nextWeekLocked: false };
 }
 
 export async function validateSlot(start: string, durationMinutes: number, allowRequestedOverlap: boolean): Promise<boolean> {

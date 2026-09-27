@@ -16,6 +16,9 @@ Plataforma pública de agendamento e painel administrativo para os atendimentos 
 
 - Serviços pausados preservam o histórico, mas deixam de aceitar novas reservas.
 - Nome, descrição, duração e valores podem ser ajustados pelo painel.
+- Quando há valor por minuto cadastrado, o preço do agendamento é recalculado pela duração e pela modalidade escolhida; valor por minuto zero mantém o preço base.
+- A agenda semanal é recorrente: o site abre automaticamente a semana seguinte com os horários salvos no painel, sem exigir um novo salvamento.
+- No celular, selecionar um atendimento leva a cliente até o botão de continuar; a relação de clientes no painel é exibida em ordem alfabética.
 - O catálogo do painel é a fonte do site: criar, editar ou pausar um serviço atualiza a vitrine e as opções do agendamento. Serviços pausados permanecem apenas no histórico.
 - Hoje a cliente é encaminhada ao WhatsApp com uma mensagem pronta para combinar o Pix e enviar comprovante. A próxima evolução planejada é QR Code Pix automático via intermediário de pagamento.
 

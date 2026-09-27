@@ -29,6 +29,8 @@
 - Fuso horário: `America/Sao_Paulo`.
 - Quarta e domingo começam bloqueados.
 - Uma reserva precisa ocupar um intervalo contínuo compatível com a duração do serviço.
+- O preço usa a duração multiplicada pelo valor por minuto da modalidade; quando esse valor é zero, mantém o preço base do serviço.
+- Os horários semanais salvos no painel se repetem automaticamente nas semanas seguintes; o botão de salvar só é necessário quando houver uma alteração.
 - O mesmo horário nunca pode ser confirmado para duas clientes.
 - O serviço Templo de Vênus reserva 20 minutos, com alerta interno aos 17 minutos.
 - A grade padrão pode ser alterada a qualquer momento.

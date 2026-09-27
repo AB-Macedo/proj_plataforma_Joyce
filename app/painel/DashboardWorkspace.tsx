@@ -97,7 +97,7 @@ export default function DashboardWorkspace({ section }: { section: DashboardSect
     if (!data) return [];
     const query = clientSearch.trim().toLocaleLowerCase('pt-BR');
     const shouldFollowAppointments = periodFilter !== 'all' || recurrenceFilter !== 'all' || appointmentStatusFilter !== 'all';
-    return data.customers.filter((customer) => (!query || customer.name.toLocaleLowerCase('pt-BR').includes(query) || phoneKey(customer.whatsapp).includes(phoneKey(query))) && (!shouldFollowAppointments || filteredCustomerPhones.has(phoneKey(customer.whatsapp))));
+    return data.customers.filter((customer) => (!query || customer.name.toLocaleLowerCase('pt-BR').includes(query) || phoneKey(customer.whatsapp).includes(phoneKey(query))) && (!shouldFollowAppointments || filteredCustomerPhones.has(phoneKey(customer.whatsapp)))).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
   }, [data, clientSearch, periodFilter, recurrenceFilter, appointmentStatusFilter, filteredCustomerPhones]);
   if (section === 'visao-geral') return null;
   if (!data) return <article className="dash-panel workspace-loading"><p>{status || 'Carregando ferramentas do painel…'}</p></article>;
