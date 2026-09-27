@@ -52,14 +52,14 @@ export default async function Home() {
           ))}
         </div>
         {specialReadings.length > 0 && <div className="special-readings">
-          <div><p className="kicker"><span /> Outras leituras</p><h3>Leituras especiais do catálogo</h3><p>Para este piloto, todas podem ser agendadas no site pelo valor teste informado.</p></div>
+          <div><p className="kicker"><span /> Outras leituras</p><h3>Leituras especiais do catálogo</h3><p>Escolha a leitura que combina com o que você busca e reserve seu horário pelo site.</p></div>
           <div className="special-grid">{specialReadings.map((reading) => <article key={reading.slug}><strong>{reading.name}</strong><em>{formatMoney(reading.price_cents)}</em><span>{reading.description || 'Leitura disponível para agendamento pelo site.'}</span><div><a href="#agenda">Agendar pelo site →</a><a href={`https://wa.me/5527988043118?text=${encodeURIComponent(`Olá! Tenho uma dúvida sobre ${reading.name}.`)}`} target="_blank" rel="noreferrer">Tirar dúvida no WhatsApp</a></div></article>)}</div>
         </div>}
       </section>
 
       <section className="booking section" id="agenda">
         <div className="booking-copy"><p className="kicker light"><span /> Agenda da semana</p><h2>Reserve um tempo só seu</h2><p>Você escolhe uma etapa por vez. Os horários exibidos são atualizados conforme a disponibilidade.</p>
-          <ol id="como-funciona"><li><span>1</span><div><strong>Escolha seu atendimento e tempo</strong><small>Consulta livre, Templo de Vênus ou leitura especial.</small></div></li><li><span>2</span><div><strong>Escolha o formato</strong><small>Mensagem, áudio ou ligação.</small></div></li><li><span>3</span><div><strong>Reserve o horário</strong><small>Depois, confirme seus dados e as fotos das cartas.</small></div></li></ol>
+          <ol id="como-funciona"><li><span>1</span><div><strong>Escolha seu atendimento e tempo</strong><small>Consulta, Templo de Vênus ou leitura especial.</small></div></li><li><span>2</span><div><strong>Escolha o formato</strong><small>Mensagem, áudio ou ligação.</small></div></li><li><span>3</span><div><strong>Reserve o horário</strong><small>Depois, confirme seus dados e as fotos das cartas.</small></div></li></ol>
         </div>
         <BookingFlow />
       </section>

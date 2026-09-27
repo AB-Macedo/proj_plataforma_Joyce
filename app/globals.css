@@ -23,6 +23,7 @@ h1,h2,h3 { font-family:var(--font-display),serif; }
 h1 { font-size:clamp(58px,6.6vw,104px); font-weight:600; letter-spacing:-.045em; line-height:.87; margin:0; max-width:700px; }
 h1 em { color:var(--wine); display:block; font-weight:500; }
 .hero-copy .kicker,.hero-copy h1 em { color:var(--gold-soft); }
+.services .kicker,.feedback-section .kicker { color:var(--gold-soft); }
 .hero-copy h1 em { text-shadow:0 2px 24px rgba(208,169,86,.16); }
 .hero-lead { color:#645a54; font-family:var(--font-display),serif; font-size:clamp(20px,1.8vw,27px); line-height:1.45; margin:32px 0; max-width:590px; }
 .hero-actions { align-items:center; display:flex; flex-wrap:wrap; gap:27px; }
