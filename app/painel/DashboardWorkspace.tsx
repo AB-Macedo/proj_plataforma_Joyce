@@ -12,8 +12,9 @@ type Customer = { id: number; name: string; whatsapp: string; email: string | nu
 type Appointment = { id: number; starts_at: string; ends_at: string; booking_code: string; google_event_id: string | null; duration_minutes: number; quoted_price_cents: number; status: string; format: string; oracle_deck: string; wants_card_images: number; name: string; whatsapp: string; service: string; payment_status: string | null };
 type Template = { id: number; key: string; channel: string; title: string; body: string; active: number };
 type Feedback = { id: number; name: string | null; rating: number; message: string; contact_allowed: number; status: 'new' | 'reviewed' | 'archived'; created_at: string };
-type Data = { services: Service[]; products: Product[]; availability: Availability[]; exceptions: Exception[]; customers: Customer[]; appointments: Appointment[]; templates: Template[]; feedback: Feedback[]; calendarConnected: boolean };
-export type DashboardSection = 'visao-geral' | 'agenda' | 'servicos' | 'produtos' | 'clientes' | 'financeiro' | 'mensagens' | 'feedbacks';
+type Analytics = { page_views_today: number; visitors_30d: number; interests_30d: number; bookings_30d: number; cleanup_completed: number };
+type Data = { services: Service[]; products: Product[]; availability: Availability[]; exceptions: Exception[]; customers: Customer[]; appointments: Appointment[]; templates: Template[]; feedback: Feedback[]; analytics: Analytics; calendarConnected: boolean };
+export type DashboardSection = 'visao-geral' | 'agenda' | 'servicos' | 'produtos' | 'clientes' | 'acessos' | 'financeiro' | 'mensagens' | 'feedbacks';
 
 const dayLabels = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 const money = (cents: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
@@ -129,6 +130,14 @@ export default function DashboardWorkspace({ section }: { section: DashboardSect
       <div className="panel-head"><div><p>LOJA SOB ENCOMENDA</p><h2>Produtos artesanais</h2></div><button type="button" onClick={() => { setCreatingProduct(true); setEditingProduct(null); }}>+ Adicionar produto</button></div>
       <p className="services-help">Todos os itens são feitos sob encomenda. Sem foto, o site usa uma imagem decorativa genérica; quando houver a foto real, cole o link HTTPS no cadastro.</p>
       <div className="mini-services">{data.products.map((product) => <button type="button" className={`service-admin-card ${product.active ? '' : 'inactive'}`} key={product.id} onClick={() => setEditingProduct(product)}><span>{product.category} · {product.active ? 'visível' : 'pausado'}</span><strong>{product.name}</strong><b>{product.price_cents > 0 ? money(product.price_cents) : 'Sob consulta'}</b></button>)}</div>
+      <p className="workspace-status" aria-live="polite">{status}</p>
+    </article>}
+
+    {section === 'acessos' && <article className="dash-panel analytics-panel" id="acessos-painel">
+      <div className="panel-head"><div><p>ACESSOS E INTERESSE</p><h2>Como as pessoas estão chegando</h2></div></div>
+      <p className="services-help">A medição começou com o lançamento e não guarda nome, IP ou dados pessoais. “Demonstraram interesse” conta quem escolheu um atendimento no agendamento.</p>
+      <div className="metric-grid analytics-grid"><article><p>Visualizações hoje</p><strong>{data.analytics.page_views_today}</strong><small>aberturas das páginas públicas</small></article><article><p>Visitantes em 30 dias</p><strong>{data.analytics.visitors_30d}</strong><small>sessões diferentes</small></article><article><p>Demonstraram interesse</p><strong>{data.analytics.interests_30d}</strong><small>escolheram um atendimento</small></article><article><p>Reservas recebidas</p><strong>{data.analytics.bookings_30d}</strong><small>nos últimos 30 dias</small></article></div>
+      {!data.analytics.cleanup_completed && <div className="launch-cleanup"><strong>Encerrar a fase de testes</strong><p>Apaga definitivamente os clientes, reservas, pagamentos e feedbacks de teste atuais. Depois de concluída, esta opção desaparece.</p><button className="destructive-action" type="button" onClick={() => { if (window.confirm('Apagar definitivamente todos os clientes, reservas, pagamentos e feedbacks de teste?')) void save('launch-cleanup', {}, 'Dados de teste apagados. O painel está pronto para os dados reais.'); }}>Apagar dados de teste</button></div>}
       <p className="workspace-status" aria-live="polite">{status}</p>
     </article>}
 

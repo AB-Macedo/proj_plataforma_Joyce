@@ -21,6 +21,7 @@ Plataforma pública de agendamento e painel administrativo para os atendimentos 
 - No celular, selecionar um atendimento leva a cliente até o botão de continuar; a relação de clientes no painel é exibida em ordem alfabética.
 - A cliente escolhe o baralho da leitura (Tarô, Baralho Cigano ou os dois); a preferência fica na reserva, no painel, no WhatsApp e no Google Agenda.
 - A página `/produtos` reúne a loja 100% sob encomenda. Produtos, preços, descrições, visibilidade e links de fotos são administrados pela aba **Produtos** do painel; sem foto cadastrada, aparece uma arte genérica.
+- A aba **Acessos** apresenta visualizações, visitantes, interesse no agendamento e reservas dos últimos 30 dias, sem coletar nome, contato ou IP.
 - O catálogo do painel é a fonte do site: criar, editar ou pausar um serviço atualiza a vitrine e as opções do agendamento. Serviços pausados permanecem apenas no histórico.
 - Hoje a cliente é encaminhada ao WhatsApp com uma mensagem pronta para combinar o Pix e enviar comprovante. A próxima evolução planejada é QR Code Pix automático via intermediário de pagamento.
 

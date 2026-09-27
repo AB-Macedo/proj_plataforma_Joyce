@@ -134,3 +134,11 @@ export const products = sqliteTable('products', {
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 }, (table) => [index('idx_products_catalog').on(table.archived, table.active, table.sortOrder, table.name)]);
+
+export const analyticsEvents = sqliteTable('analytics_events', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  eventType: text('event_type', { enum: ['page_view', 'booking_interest', 'schedule_view'] }).notNull(),
+  sessionId: text('session_id').notNull(),
+  path: text('path').notNull().default('/'),
+  createdAt: text('created_at').notNull(),
+}, (table) => [index('idx_analytics_events_type_created').on(table.eventType, table.createdAt), index('idx_analytics_events_session_created').on(table.sessionId, table.createdAt)]);

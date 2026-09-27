@@ -72,6 +72,7 @@ O projeto será hospedado online. O desktop de quem desenvolveu não precisará 
 - Painel protegido; páginas públicas não expõem dados de clientes.
 - Toda alteração administrativa deve ser autorizada no servidor.
 - Coletar somente dados necessários e oferecer política de privacidade.
+- Métricas próprias registram apenas evento, caminho público, identificador aleatório de sessão e horário; não armazenam IP nem dados de contato.
 - Manter chaves e tokens exclusivamente em segredos da hospedagem.
 - Registrar estados de pagamento, sem armazenar dados completos de cartão.
 - Prever exportação e cópia de segurança para reduzir dependência do fornecedor.

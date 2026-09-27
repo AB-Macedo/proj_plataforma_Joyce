@@ -31,7 +31,7 @@ function money(cents: number) { return new Intl.NumberFormat('pt-BR', { style: '
 function hours(minutes: number) { return `${Math.floor(minutes / 60)}h${minutes % 60 ? ` ${minutes % 60}min` : ''}`; }
 
 const sections: Array<{ key: DashboardSection; label: string; icon: string }> = [
-  { key: 'visao-geral', label: 'Visão geral', icon: '⌂' }, { key: 'agenda', label: 'Agenda', icon: '□' }, { key: 'servicos', label: 'Serviços', icon: '✦' }, { key: 'produtos', label: 'Produtos', icon: '◇' }, { key: 'clientes', label: 'Clientes', icon: '♙' }, { key: 'financeiro', label: 'Financeiro', icon: '◌' }, { key: 'mensagens', label: 'Mensagens', icon: '✉' }, { key: 'feedbacks', label: 'Feedbacks', icon: '♡' },
+  { key: 'visao-geral', label: 'Visão geral', icon: '⌂' }, { key: 'agenda', label: 'Agenda', icon: '□' }, { key: 'servicos', label: 'Serviços', icon: '✦' }, { key: 'produtos', label: 'Produtos', icon: '◇' }, { key: 'clientes', label: 'Clientes', icon: '♙' }, { key: 'acessos', label: 'Acessos', icon: '◎' }, { key: 'financeiro', label: 'Financeiro', icon: '◌' }, { key: 'mensagens', label: 'Mensagens', icon: '✉' }, { key: 'feedbacks', label: 'Feedbacks', icon: '♡' },
 ];
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ aba?: string }> }) {

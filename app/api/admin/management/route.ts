@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireDashboardAdmin } from '../../../dashboard-auth';
+import { addDays, localToday } from '../../../../lib/schedule';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,7 +103,9 @@ async function syncCalendar(appointment: CalendarAppointment, status: string, pa
 export async function GET() {
   await requireDashboardAdmin('/painel');
   const now = new Date().toISOString();
-  const [services, products, availability, exceptions, customers, appointments, templates, feedback] = await Promise.all([
+  const today = localToday();
+  const since30 = addDays(today, -29);
+  const [services, products, availability, exceptions, customers, appointments, templates, feedback, analytics] = await Promise.all([
     env.DB.prepare('SELECT id, slug, name, description, price_cents, whatsapp_rate_cents, call_rate_cents, duration_minutes, internal_note, active, sort_order FROM services WHERE archived = false ORDER BY price_cents ASC, name COLLATE NOCASE ASC').all(),
     env.DB.prepare('SELECT id, name, category, description, price_cents, image_url, active, sort_order FROM products WHERE archived = false ORDER BY sort_order, name COLLATE NOCASE').all(),
     env.DB.prepare('SELECT id, weekday, start_time, end_time, active FROM weekly_availability ORDER BY weekday, start_time').all(),
@@ -111,8 +114,9 @@ export async function GET() {
     env.DB.prepare("SELECT a.id, a.starts_at, a.ends_at, a.booking_code, a.google_event_id, a.duration_minutes, a.quoted_price_cents, a.status, a.format, a.oracle_deck, a.wants_card_images, c.name, c.whatsapp, s.name AS service, (SELECT p.status FROM payments p WHERE p.appointment_id = a.id ORDER BY p.id DESC LIMIT 1) AS payment_status FROM appointments a JOIN customers c ON c.id=a.customer_id JOIN services s ON s.id=a.service_id ORDER BY a.starts_at DESC LIMIT 80").all(),
     env.DB.prepare('SELECT id, key, channel, title, body, active FROM message_templates ORDER BY id').all(),
     env.DB.prepare('SELECT id, name, rating, message, contact_allowed, status, created_at FROM feedback ORDER BY created_at DESC LIMIT 100').all(),
+    env.DB.prepare("SELECT (SELECT COUNT(*) FROM analytics_events WHERE event_type='page_view' AND created_at>=?) AS page_views_today, (SELECT COUNT(DISTINCT session_id) FROM analytics_events WHERE event_type='page_view' AND created_at>=?) AS visitors_30d, (SELECT COUNT(DISTINCT session_id) FROM analytics_events WHERE event_type='booking_interest' AND created_at>=?) AS interests_30d, (SELECT COUNT(*) FROM appointments WHERE created_at>=?) + (SELECT COUNT(*) FROM booking_requests WHERE created_at>=?) AS bookings_30d, (SELECT COUNT(*) FROM settings WHERE key='launch_cleanup_completed' AND value='true') AS cleanup_completed").bind(`${today}T00:00:00`, `${since30}T00:00:00`, `${since30}T00:00:00`, `${since30}T00:00:00`, `${since30}T00:00:00`).first(),
   ]);
-  return NextResponse.json({ services: services.results, products: products.results, availability: availability.results, exceptions: exceptions.results, customers: customers.results, appointments: appointments.results, templates: templates.results, feedback: feedback.results, calendarConnected: Boolean(calendarBridge()) });
+  return NextResponse.json({ services: services.results, products: products.results, availability: availability.results, exceptions: exceptions.results, customers: customers.results, appointments: appointments.results, templates: templates.results, feedback: feedback.results, analytics, calendarConnected: Boolean(calendarBridge()) });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -120,6 +124,21 @@ export async function PATCH(request: NextRequest) {
   const body = await request.json() as Record<string, unknown>;
   const action = text(body.action, 40);
   const now = new Date().toISOString();
+
+  if (action === 'launch-cleanup') {
+    const completed = await env.DB.prepare("SELECT value FROM settings WHERE key='launch_cleanup_completed'").first<{ value: string }>();
+    if (completed?.value === 'true') return NextResponse.json({ error: 'A limpeza de lançamento já foi concluída.' }, { status: 409 });
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM payments'),
+      env.DB.prepare('DELETE FROM appointments'),
+      env.DB.prepare('DELETE FROM booking_requests'),
+      env.DB.prepare('DELETE FROM feedback'),
+      env.DB.prepare('DELETE FROM customers'),
+      env.DB.prepare('DELETE FROM analytics_events'),
+      env.DB.prepare("INSERT INTO settings (key, value, updated_at) VALUES ('launch_cleanup_completed', 'true', ?) ON CONFLICT(key) DO UPDATE SET value='true', updated_at=excluded.updated_at").bind(now),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
 
   if (action === 'service') {
     const id = Number(body.id);
