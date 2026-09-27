@@ -31,6 +31,8 @@
 - Uma reserva precisa ocupar um intervalo contínuo compatível com a duração do serviço.
 - O preço usa a duração multiplicada pelo valor por minuto da modalidade; quando esse valor é zero, mantém o preço base do serviço.
 - Os horários semanais salvos no painel se repetem automaticamente nas semanas seguintes; o botão de salvar só é necessário quando houver uma alteração.
+- Durante o agendamento, a cliente escolhe entre Tarô, Baralho Cigano ou os dois; a preferência acompanha a reserva.
+- A Loja exibe exclusivamente produtos sob encomenda. A administradora pode cadastrar, editar, pausar e excluir os itens, além de informar preço e link da foto.
 - O mesmo horário nunca pode ser confirmado para duas clientes.
 - O serviço Templo de Vênus reserva 20 minutos, com alerta interno aos 17 minutos.
 - A grade padrão pode ser alterada a qualquer momento.

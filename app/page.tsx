@@ -17,7 +17,7 @@ export default async function Home() {
     <main>
       <header className="site-header">
         <a className="brand" href="#inicio" aria-label="Magia Theia, início"><span className="brand-mark" aria-hidden="true">M</span><span>Magia Theia</span></a>
-        <nav aria-label="Navegação principal"><a href="#consultas">Consultas</a><a href="#agenda">Agenda</a><a href="#como-funciona">Como funciona</a></nav>
+        <nav aria-label="Navegação principal"><a href="#consultas">Consultas</a><a href="#agenda">Agenda</a><a href="/produtos">Loja</a><a href="#como-funciona">Como funciona</a></nav>
         <a className="header-cta" href="#agenda">Agendar</a>
       </header>
 
@@ -59,7 +59,7 @@ export default async function Home() {
 
       <section className="booking section" id="agenda">
         <div className="booking-copy"><p className="kicker light"><span /> Agenda da semana</p><h2>Reserve um tempo só seu</h2><p>Você escolhe uma etapa por vez. Os horários exibidos são atualizados conforme a disponibilidade.</p>
-          <ol id="como-funciona"><li><span>1</span><div><strong>Escolha seu atendimento e tempo</strong><small>Consulta, Templo de Vênus ou leitura especial.</small></div></li><li><span>2</span><div><strong>Escolha o formato</strong><small>Mensagem, áudio ou ligação.</small></div></li><li><span>3</span><div><strong>Reserve o horário</strong><small>Depois, confirme seus dados e as fotos das cartas.</small></div></li></ol>
+          <ol id="como-funciona"><li><span>1</span><div><strong>Escolha seu atendimento e tempo</strong><small>Consulta, Templo de Vênus ou leitura especial.</small></div></li><li><span>2</span><div><strong>Escolha o formato e o baralho</strong><small>Mensagem, áudio ou ligação; Tarô, Baralho Cigano ou os dois.</small></div></li><li><span>3</span><div><strong>Reserve o horário</strong><small>Depois, confirme seus dados e informe se quer fotos das cartas.</small></div></li></ol>
         </div>
         <BookingFlow />
       </section>

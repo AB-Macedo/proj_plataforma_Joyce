@@ -32,6 +32,16 @@ function serviceSlug(name: string) {
   return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 55) || 'novo-atendimento';
 }
 
+function productData(body: Record<string, unknown>) {
+  const name = text(body.name, 90);
+  const category = text(body.category, 50);
+  const description = text(body.description, 600);
+  const price = Math.round(Number(body.price) * 100);
+  const imageUrl = text(body.imageUrl, 500);
+  if (name.length < 2 || category.length < 2 || !Number.isInteger(price) || price < 0 || (imageUrl && !imageUrl.startsWith('https://'))) return null;
+  return { name, category, description, price, imageUrl: imageUrl || null, active: body.active ? 1 : 0 };
+}
+
 function calendarBridge() {
   const runtime = env as RuntimeEnv;
   const url = runtime.CALENDAR_BRIDGE_URL?.trim();
@@ -47,6 +57,7 @@ type CalendarAppointment = {
   google_event_id: string | null;
   format: string;
   wants_card_images: number;
+  oracle_deck: string;
   name: string;
   whatsapp: string;
   service: string;
@@ -71,7 +82,7 @@ async function syncCalendar(appointment: CalendarAppointment, status: string, pa
         title: `Magia Theia — ${appointment.service}`,
         startsAt: appointment.starts_at,
         endsAt: appointment.ends_at,
-        description: `Reserva ${appointment.booking_code}\nCliente: ${appointment.name}\nWhatsApp: ${appointment.whatsapp}\nFormato: ${appointment.format === 'call' ? 'Ligação' : 'Mensagens e áudios'}\nFotos das cartas: ${appointment.wants_card_images ? 'Solicitadas' : 'Não solicitadas'}`,
+        description: `Reserva ${appointment.booking_code}\nCliente: ${appointment.name}\nWhatsApp: ${appointment.whatsapp}\nFormato: ${appointment.format === 'call' ? 'Ligação' : 'Mensagens e áudios'}\nBaralho: ${appointment.oracle_deck === 'cigano' ? 'Baralho Cigano' : appointment.oracle_deck === 'ambos' ? 'Tarô e Baralho Cigano' : 'Tarô'}\nFotos das cartas: ${appointment.wants_card_images ? 'Solicitadas' : 'Não solicitadas'}`,
       }),
     });
     const result = await response.json().catch(() => null) as { ok?: boolean; eventId?: string; error?: string } | null;
@@ -91,16 +102,17 @@ async function syncCalendar(appointment: CalendarAppointment, status: string, pa
 export async function GET() {
   await requireDashboardAdmin('/painel');
   const now = new Date().toISOString();
-  const [services, availability, exceptions, customers, appointments, templates, feedback] = await Promise.all([
+  const [services, products, availability, exceptions, customers, appointments, templates, feedback] = await Promise.all([
     env.DB.prepare('SELECT id, slug, name, description, price_cents, whatsapp_rate_cents, call_rate_cents, duration_minutes, internal_note, active, sort_order FROM services WHERE archived = false ORDER BY price_cents ASC, name COLLATE NOCASE ASC').all(),
+    env.DB.prepare('SELECT id, name, category, description, price_cents, image_url, active, sort_order FROM products WHERE archived = false ORDER BY sort_order, name COLLATE NOCASE').all(),
     env.DB.prepare('SELECT id, weekday, start_time, end_time, active FROM weekly_availability ORDER BY weekday, start_time').all(),
     env.DB.prepare('SELECT id, date, start_time, end_time, kind, reason FROM availability_exceptions WHERE date >= ? ORDER BY date, start_time').bind(now.slice(0, 10)).all(),
     env.DB.prepare("SELECT c.id, c.name, c.whatsapp, c.email, c.birth_date, c.created_at, COUNT(a.id) AS bookings FROM customers c LEFT JOIN appointments a ON a.customer_id = c.id GROUP BY c.id ORDER BY c.created_at DESC LIMIT 50").all(),
-    env.DB.prepare("SELECT a.id, a.starts_at, a.ends_at, a.booking_code, a.google_event_id, a.duration_minutes, a.quoted_price_cents, a.status, a.format, a.wants_card_images, c.name, c.whatsapp, s.name AS service, (SELECT p.status FROM payments p WHERE p.appointment_id = a.id ORDER BY p.id DESC LIMIT 1) AS payment_status FROM appointments a JOIN customers c ON c.id=a.customer_id JOIN services s ON s.id=a.service_id ORDER BY a.starts_at DESC LIMIT 80").all(),
+    env.DB.prepare("SELECT a.id, a.starts_at, a.ends_at, a.booking_code, a.google_event_id, a.duration_minutes, a.quoted_price_cents, a.status, a.format, a.oracle_deck, a.wants_card_images, c.name, c.whatsapp, s.name AS service, (SELECT p.status FROM payments p WHERE p.appointment_id = a.id ORDER BY p.id DESC LIMIT 1) AS payment_status FROM appointments a JOIN customers c ON c.id=a.customer_id JOIN services s ON s.id=a.service_id ORDER BY a.starts_at DESC LIMIT 80").all(),
     env.DB.prepare('SELECT id, key, channel, title, body, active FROM message_templates ORDER BY id').all(),
     env.DB.prepare('SELECT id, name, rating, message, contact_allowed, status, created_at FROM feedback ORDER BY created_at DESC LIMIT 100').all(),
   ]);
-  return NextResponse.json({ services: services.results, availability: availability.results, exceptions: exceptions.results, customers: customers.results, appointments: appointments.results, templates: templates.results, feedback: feedback.results, calendarConnected: Boolean(calendarBridge()) });
+  return NextResponse.json({ services: services.results, products: products.results, availability: availability.results, exceptions: exceptions.results, customers: customers.results, appointments: appointments.results, templates: templates.results, feedback: feedback.results, calendarConnected: Boolean(calendarBridge()) });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -133,6 +145,27 @@ export async function PATCH(request: NextRequest) {
     const order = await env.DB.prepare('SELECT COALESCE(MAX(sort_order), 0) + 1 AS next_order FROM services').first<{ next_order: number }>();
     await env.DB.prepare('INSERT INTO services (slug, name, description, price_cents, whatsapp_rate_cents, call_rate_cents, duration_minutes, active, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
       .bind(slug, service.name, service.description, service.price, service.whatsappRate, service.callRate, service.duration, service.active, order?.next_order ?? 1, now, now).run();
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'product' || action === 'product-create') {
+    const product = productData(body);
+    if (!product) return NextResponse.json({ error: 'Revise os dados do produto e use um link de foto HTTPS.' }, { status: 400 });
+    if (action === 'product') {
+      const id = Number(body.id);
+      if (!Number.isInteger(id)) return NextResponse.json({ error: 'Produto inválido.' }, { status: 400 });
+      await env.DB.prepare('UPDATE products SET name=?, category=?, description=?, price_cents=?, image_url=?, active=?, made_to_order=true, updated_at=? WHERE id=? AND archived=false').bind(product.name, product.category, product.description, product.price, product.imageUrl, product.active, now, id).run();
+    } else {
+      const order = await env.DB.prepare('SELECT COALESCE(MAX(sort_order), 0) + 1 AS next_order FROM products').first<{ next_order: number }>();
+      await env.DB.prepare('INSERT INTO products (name, category, description, price_cents, image_url, made_to_order, active, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, true, ?, ?, ?, ?)').bind(product.name, product.category, product.description, product.price, product.imageUrl, product.active, order?.next_order ?? 1, now, now).run();
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'product-delete') {
+    const id = Number(body.id);
+    if (!Number.isInteger(id)) return NextResponse.json({ error: 'Produto inválido.' }, { status: 400 });
+    await env.DB.prepare('UPDATE products SET active=false, archived=true, updated_at=? WHERE id=?').bind(now, id).run();
     return NextResponse.json({ ok: true });
   }
 
@@ -174,7 +207,7 @@ export async function PATCH(request: NextRequest) {
       env.DB.prepare('UPDATE appointments SET status=?, updated_at=? WHERE id=?').bind(status, now, id),
       env.DB.prepare("UPDATE payments SET status=?, paid_at=CASE WHEN ?='paid' THEN ? ELSE paid_at END WHERE appointment_id=?").bind(payment, payment, now, id),
     ]);
-    const appointment = await env.DB.prepare("SELECT a.id, a.starts_at, a.ends_at, a.booking_code, a.google_event_id, a.format, a.wants_card_images, c.name, c.whatsapp, s.name AS service FROM appointments a JOIN customers c ON c.id=a.customer_id JOIN services s ON s.id=a.service_id WHERE a.id=?").bind(id).first<CalendarAppointment>();
+    const appointment = await env.DB.prepare("SELECT a.id, a.starts_at, a.ends_at, a.booking_code, a.google_event_id, a.format, a.oracle_deck, a.wants_card_images, c.name, c.whatsapp, s.name AS service FROM appointments a JOIN customers c ON c.id=a.customer_id JOIN services s ON s.id=a.service_id WHERE a.id=?").bind(id).first<CalendarAppointment>();
     if (!appointment) return NextResponse.json({ error: 'Reserva não encontrada.' }, { status: 404 });
     const calendar = await syncCalendar(appointment, status, payment);
     return NextResponse.json({ ok: true, calendarMessage: calendar.message, calendarError: calendar.error });
@@ -183,7 +216,7 @@ export async function PATCH(request: NextRequest) {
   if (action === 'calendar-sync') {
     const id = Number(body.id);
     if (!Number.isInteger(id)) return NextResponse.json({ error: 'Reserva inválida.' }, { status: 400 });
-    const appointment = await env.DB.prepare("SELECT a.id, a.starts_at, a.ends_at, a.booking_code, a.google_event_id, a.format, a.wants_card_images, a.status, c.name, c.whatsapp, s.name AS service, (SELECT p.status FROM payments p WHERE p.appointment_id=a.id ORDER BY p.id DESC LIMIT 1) AS payment_status FROM appointments a JOIN customers c ON c.id=a.customer_id JOIN services s ON s.id=a.service_id WHERE a.id=?").bind(id).first<CalendarAppointment & { status: string; payment_status: string | null }>();
+    const appointment = await env.DB.prepare("SELECT a.id, a.starts_at, a.ends_at, a.booking_code, a.google_event_id, a.format, a.oracle_deck, a.wants_card_images, a.status, c.name, c.whatsapp, s.name AS service, (SELECT p.status FROM payments p WHERE p.appointment_id=a.id ORDER BY p.id DESC LIMIT 1) AS payment_status FROM appointments a JOIN customers c ON c.id=a.customer_id JOIN services s ON s.id=a.service_id WHERE a.id=?").bind(id).first<CalendarAppointment & { status: string; payment_status: string | null }>();
     if (!appointment) return NextResponse.json({ error: 'Reserva não encontrada.' }, { status: 404 });
     const calendar = await syncCalendar(appointment, appointment.status, appointment.payment_status ?? 'pending');
     return NextResponse.json({ ok: true, calendarMessage: calendar.message, calendarError: calendar.error });

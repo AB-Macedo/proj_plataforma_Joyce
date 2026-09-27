@@ -65,7 +65,7 @@ O projeto será hospedado online. O desktop de quem desenvolveu não precisará 
 - `payments`: valor, método, estado e data de recebimento.
 - `message_templates`: finalidade, canal, texto e estado de aprovação.
 - `settings`: identidade, políticas e configurações operacionais.
-- Futuro: `products`, `inventory_movements`, `orders` e `order_items`.
+- Atual: `products` para o catálogo sob encomenda. Futuro, se necessário: `orders` e `order_items` para vendas integradas.
 
 ## Segurança e privacidade
 

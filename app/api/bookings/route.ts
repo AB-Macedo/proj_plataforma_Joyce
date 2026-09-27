@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 type BookingBody = {
   service?: string;
   format?: string;
+  oracleDeck?: string;
   duration?: number;
   startsAt?: string;
   name?: string;
@@ -44,6 +45,7 @@ export async function POST(request: NextRequest) {
   const serviceRow = await env.DB.prepare('SELECT id, slug, name, description, price_cents, whatsapp_rate_cents, call_rate_cents, duration_minutes FROM services WHERE slug = ? AND active = true AND archived = false LIMIT 1').bind(requestedSlug).first<{ id: number; slug: string; name: string; description: string; price_cents: number; whatsapp_rate_cents: number; call_rate_cents: number; duration_minutes: number }>();
   const service = serviceRow ? decorateService(serviceRow) : null;
   const format = body.format as BookingFormat;
+  const oracleDeck = clean(body.oracleDeck, 12);
   const duration = service?.requiresApproval ? Number(body.duration) : service?.duration_minutes ?? Number(body.duration);
   const startsAt = clean(body.startsAt, 19);
   const name = clean(body.name, 90);
@@ -52,6 +54,7 @@ export async function POST(request: NextRequest) {
   const birthDate = clean(body.birthDate, 10);
 
   if (!service || !['whatsapp', 'call'].includes(format)) return NextResponse.json({ error: 'Serviço inválido.' }, { status: 400 });
+  if (!['tarot', 'cigano', 'ambos'].includes(oracleDeck)) return NextResponse.json({ error: 'Escolha o baralho da leitura.' }, { status: 400 });
   if (!Number.isInteger(duration) || duration < (service.requiresApproval ? 20 : 5) || duration > (service.requiresApproval ? 180 : service.duration_minutes) || (service.requiresApproval && duration % 10 !== 0)) return NextResponse.json({ error: 'Duração inválida.' }, { status: 400 });
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00$/.test(startsAt) || startsAt.slice(0, 10) < localToday()) return NextResponse.json({ error: 'Escolha um horário válido.' }, { status: 400 });
   if (name.length < 2 || whatsapp.replace(/\D/g, '').length < 10) return NextResponse.json({ error: 'Informe seu nome e um WhatsApp válido.' }, { status: 400 });
@@ -83,11 +86,11 @@ export async function POST(request: NextRequest) {
     if (!customer) throw new Error('customer_not_created');
 
     if (service.requiresApproval) {
-      await env.DB.prepare("INSERT INTO booking_requests (booking_code, customer_id, service_id, preferred_starts_at, preferred_ends_at, format, duration_minutes, quoted_price_cents, deposit_cents, wants_card_images, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'requested', ?, ?)")
-        .bind(code, customer.id, serviceRow.id, startsAt, end, format, duration, priceCents, priceCents, Boolean(body.wantsCardImages), now, now).run();
+      await env.DB.prepare("INSERT INTO booking_requests (booking_code, customer_id, service_id, preferred_starts_at, preferred_ends_at, format, oracle_deck, duration_minutes, quoted_price_cents, deposit_cents, wants_card_images, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'requested', ?, ?)")
+        .bind(code, customer.id, serviceRow.id, startsAt, end, format, oracleDeck, duration, priceCents, priceCents, Boolean(body.wantsCardImages), now, now).run();
     } else {
-      const appointment = await env.DB.prepare("INSERT INTO appointments (service_id, customer_id, starts_at, ends_at, booking_code, format, duration_minutes, quoted_price_cents, wants_card_images, temple_rules_accepted, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?) RETURNING id")
-        .bind(serviceRow.id, customer.id, startsAt, end, code, format, duration, priceCents, Boolean(body.wantsCardImages), Boolean(body.templeRulesAccepted), now, now).first<{ id: number }>();
+      const appointment = await env.DB.prepare("INSERT INTO appointments (service_id, customer_id, starts_at, ends_at, booking_code, format, oracle_deck, duration_minutes, quoted_price_cents, wants_card_images, temple_rules_accepted, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?) RETURNING id")
+        .bind(serviceRow.id, customer.id, startsAt, end, code, format, oracleDeck, duration, priceCents, Boolean(body.wantsCardImages), Boolean(body.templeRulesAccepted), now, now).first<{ id: number }>();
       if (!appointment) throw new Error('appointment_not_created');
       await env.DB.prepare("INSERT INTO payments (appointment_id, amount_cents, method, status, created_at) VALUES (?, ?, 'pix', 'pending', ?)").bind(appointment.id, priceCents, now).run();
     }
@@ -98,7 +101,8 @@ export async function POST(request: NextRequest) {
   }
 
   const formattedPrice = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(priceCents / 100);
-  const text = `Olá! Fiz a reserva ${code} pelo site para ${service.name} (${duration} minutos). Valor: ${formattedPrice}. Quero realizar o pagamento por Pix e enviar o comprovante neste chat.`;
+  const oracleLabel = oracleDeck === 'tarot' ? 'Tarô' : oracleDeck === 'cigano' ? 'Baralho Cigano' : 'Tarô e Baralho Cigano';
+  const text = `Olá! Fiz a reserva ${code} pelo site para ${service.name} (${duration} minutos), com ${oracleLabel}. Valor: ${formattedPrice}. Quero realizar o pagamento por Pix e enviar o comprovante neste chat.`;
 
   return NextResponse.json({
     ok: true,

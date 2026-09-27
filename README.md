@@ -19,6 +19,8 @@ Plataforma pública de agendamento e painel administrativo para os atendimentos 
 - Quando há valor por minuto cadastrado, o preço do agendamento é recalculado pela duração e pela modalidade escolhida; valor por minuto zero mantém o preço base.
 - A agenda semanal é recorrente: o site abre automaticamente a semana seguinte com os horários salvos no painel, sem exigir um novo salvamento.
 - No celular, selecionar um atendimento leva a cliente até o botão de continuar; a relação de clientes no painel é exibida em ordem alfabética.
+- A cliente escolhe o baralho da leitura (Tarô, Baralho Cigano ou os dois); a preferência fica na reserva, no painel, no WhatsApp e no Google Agenda.
+- A página `/produtos` reúne a loja 100% sob encomenda. Produtos, preços, descrições, visibilidade e links de fotos são administrados pela aba **Produtos** do painel; sem foto cadastrada, aparece uma arte genérica.
 - O catálogo do painel é a fonte do site: criar, editar ou pausar um serviço atualiza a vitrine e as opções do agendamento. Serviços pausados permanecem apenas no histórico.
 - Hoje a cliente é encaminhada ao WhatsApp com uma mensagem pronta para combinar o Pix e enviar comprovante. A próxima evolução planejada é QR Code Pix automático via intermediário de pagamento.
 

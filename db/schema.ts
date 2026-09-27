@@ -57,6 +57,7 @@ export const appointments = sqliteTable('appointments', {
   durationMinutes: integer('duration_minutes').notNull().default(20),
   quotedPriceCents: integer('quoted_price_cents').notNull().default(0),
   wantsCardImages: integer('wants_card_images', { mode: 'boolean' }).notNull().default(false),
+  oracleDeck: text('oracle_deck', { enum: ['tarot', 'cigano', 'ambos'] }).notNull().default('tarot'),
   templeRulesAccepted: integer('temple_rules_accepted', { mode: 'boolean' }).notNull().default(false),
   status: text('status', { enum: ['pending', 'confirmed', 'completed', 'cancelled', 'no_show'] }).notNull().default('pending'),
   googleEventId: text('google_event_id'),
@@ -87,6 +88,7 @@ export const bookingRequests = sqliteTable('booking_requests', {
   quotedPriceCents: integer('quoted_price_cents').notNull(),
   depositCents: integer('deposit_cents').notNull(),
   wantsCardImages: integer('wants_card_images', { mode: 'boolean' }).notNull().default(false),
+  oracleDeck: text('oracle_deck', { enum: ['tarot', 'cigano', 'ambos'] }).notNull().default('tarot'),
   status: text('status', { enum: ['requested', 'approved', 'declined', 'converted'] }).notNull().default('requested'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
@@ -117,3 +119,18 @@ export const settings = sqliteTable('settings', {
   value: text('value').notNull(),
   updatedAt: text('updated_at').notNull(),
 });
+
+export const products = sqliteTable('products', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  category: text('category').notNull(),
+  description: text('description').notNull().default(''),
+  priceCents: integer('price_cents').notNull().default(0),
+  imageUrl: text('image_url'),
+  madeToOrder: integer('made_to_order', { mode: 'boolean' }).notNull().default(false),
+  active: integer('active', { mode: 'boolean' }).notNull().default(true),
+  archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+}, (table) => [index('idx_products_catalog').on(table.archived, table.active, table.sortOrder, table.name)]);
