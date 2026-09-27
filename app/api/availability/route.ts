@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   const slug = request.nextUrl.searchParams.get('service') ?? '';
-  const row = await env.DB.prepare('SELECT id, slug, name, description, price_cents, whatsapp_rate_cents, call_rate_cents, duration_minutes FROM services WHERE slug = ? AND active = true LIMIT 1').bind(slug).first();
+  const row = await env.DB.prepare('SELECT id, slug, name, description, price_cents, whatsapp_rate_cents, call_rate_cents, duration_minutes FROM services WHERE slug = ? AND active = true AND archived = false LIMIT 1').bind(slug).first();
   const service = row ? decorateService(row as Parameters<typeof decorateService>[0]) : null;
   const format = request.nextUrl.searchParams.get('format') as BookingFormat;
   const requestedDuration = Number(request.nextUrl.searchParams.get('duration'));

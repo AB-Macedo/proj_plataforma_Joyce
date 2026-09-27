@@ -92,7 +92,7 @@ export async function GET() {
   await requireDashboardAdmin('/painel');
   const now = new Date().toISOString();
   const [services, availability, exceptions, customers, appointments, templates, feedback] = await Promise.all([
-    env.DB.prepare('SELECT id, slug, name, description, price_cents, whatsapp_rate_cents, call_rate_cents, duration_minutes, internal_note, active, sort_order FROM services ORDER BY sort_order, id').all(),
+    env.DB.prepare('SELECT id, slug, name, description, price_cents, whatsapp_rate_cents, call_rate_cents, duration_minutes, internal_note, active, sort_order FROM services WHERE archived = false ORDER BY price_cents ASC, name COLLATE NOCASE ASC').all(),
     env.DB.prepare('SELECT id, weekday, start_time, end_time, active FROM weekly_availability ORDER BY weekday, start_time').all(),
     env.DB.prepare('SELECT id, date, start_time, end_time, kind, reason FROM availability_exceptions WHERE date >= ? ORDER BY date, start_time').bind(now.slice(0, 10)).all(),
     env.DB.prepare("SELECT c.id, c.name, c.whatsapp, c.email, c.birth_date, c.created_at, COUNT(a.id) AS bookings FROM customers c LEFT JOIN appointments a ON a.customer_id = c.id GROUP BY c.id ORDER BY c.created_at DESC LIMIT 50").all(),
@@ -113,7 +113,14 @@ export async function PATCH(request: NextRequest) {
     const id = Number(body.id);
     const service = serviceData(body);
     if (!Number.isInteger(id) || !service) return NextResponse.json({ error: 'Revise os dados do serviço.' }, { status: 400 });
-    await env.DB.prepare('UPDATE services SET name=?, description=?, price_cents=?, whatsapp_rate_cents=?, call_rate_cents=?, duration_minutes=?, active=?, updated_at=? WHERE id=?').bind(service.name, service.description, service.price, service.whatsappRate, service.callRate, service.duration, service.active, now, id).run();
+    await env.DB.prepare('UPDATE services SET name=?, description=?, price_cents=?, whatsapp_rate_cents=?, call_rate_cents=?, duration_minutes=?, active=?, updated_at=? WHERE id=? AND archived=false').bind(service.name, service.description, service.price, service.whatsappRate, service.callRate, service.duration, service.active, now, id).run();
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'service-delete') {
+    const id = Number(body.id);
+    if (!Number.isInteger(id)) return NextResponse.json({ error: 'Serviço inválido.' }, { status: 400 });
+    await env.DB.prepare('UPDATE services SET active=false, archived=true, updated_at=? WHERE id=?').bind(now, id).run();
     return NextResponse.json({ ok: true });
   }
 

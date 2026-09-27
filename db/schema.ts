@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const services = sqliteTable('services', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -12,10 +12,11 @@ export const services = sqliteTable('services', {
   durationMinutes: integer('duration_minutes').notNull(),
   internalNote: text('internal_note'),
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
+  archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-});
+}, (table) => [index('idx_services_catalog').on(table.archived, table.active, table.priceCents, table.name)]);
 
 export const weeklyAvailability = sqliteTable('weekly_availability', {
   id: integer('id').primaryKey({ autoIncrement: true }),

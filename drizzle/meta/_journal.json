@@ -43,6 +43,13 @@
       "when": 1788755400000,
       "tag": "0005_private_feedback",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1790470800000,
+      "tag": "0006_archive_services",
+      "breakpoints": true
     }
   ]
 }

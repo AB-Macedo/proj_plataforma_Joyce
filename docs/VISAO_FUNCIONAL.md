@@ -22,6 +22,7 @@
 6. Confirma pagamentos e conclui ou cancela atendimentos.
 7. Consulta horas disponibilizadas, vendidas e receita por hora.
 8. Pausa ou reativa temporariamente um serviço, sem apagar atendimentos já registrados.
+9. Exclui um serviço do catálogo sem apagar o histórico de reservas ligado a ele.
 
 ## Regras iniciais
 

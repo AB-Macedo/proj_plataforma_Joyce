@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   }
 
   const requestedSlug = clean(body.service, 80);
-  const serviceRow = await env.DB.prepare('SELECT id, slug, name, description, price_cents, whatsapp_rate_cents, call_rate_cents, duration_minutes FROM services WHERE slug = ? AND active = true LIMIT 1').bind(requestedSlug).first<{ id: number; slug: string; name: string; description: string; price_cents: number; whatsapp_rate_cents: number; call_rate_cents: number; duration_minutes: number }>();
+  const serviceRow = await env.DB.prepare('SELECT id, slug, name, description, price_cents, whatsapp_rate_cents, call_rate_cents, duration_minutes FROM services WHERE slug = ? AND active = true AND archived = false LIMIT 1').bind(requestedSlug).first<{ id: number; slug: string; name: string; description: string; price_cents: number; whatsapp_rate_cents: number; call_rate_cents: number; duration_minutes: number }>();
   const service = serviceRow ? decorateService(serviceRow) : null;
   const format = body.format as BookingFormat;
   const duration = service?.requiresApproval ? Number(body.duration) : service?.duration_minutes ?? Number(body.duration);

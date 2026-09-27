@@ -10,7 +10,7 @@ function servicePrice(service: SiteService) { return service.slug === 'consulta-
 function serviceDuration(service: SiteService) { return service.slug === 'consulta-livre' ? '20 min a 3 horas' : `${service.duration_minutes} minutos`; }
 
 export default async function Home() {
-  const result = await env.DB.prepare('SELECT slug, name, description, price_cents, duration_minutes FROM services WHERE active = true ORDER BY sort_order, id').all<SiteService>();
+  const result = await env.DB.prepare('SELECT slug, name, description, price_cents, duration_minutes FROM services WHERE active = true AND archived = false ORDER BY sort_order, id').all<SiteService>();
   const services = result.results.filter((service) => !pilotSlugs.has(service.slug));
   const specialReadings = result.results.filter((service) => pilotSlugs.has(service.slug));
   return (

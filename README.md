@@ -10,7 +10,7 @@ Plataforma pública de agendamento e painel administrativo para os atendimentos 
 - Reservas, clientes, filtros por período, clientes recorrentes e status de pagamento.
 - Selo para clientes que solicitaram fotos das cartas e feedback privado no painel.
 - Sincronização com Google Agenda quando uma reserva está confirmada e paga.
-- Catálogo de serviços: editar serviços existentes, pausar/reativar temporariamente e criar novos registros pelo painel.
+- Catálogo de serviços: criar, editar, pausar/reativar e excluir serviços pelo painel, preservando o histórico das reservas antigas.
 
 ## Serviços e pagamentos
 

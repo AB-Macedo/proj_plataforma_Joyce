@@ -20,7 +20,7 @@
 
 - [ ] Login e autorização da administradora.
 - [ ] Agenda diária, semanal e lista de próximos atendimentos.
-- [ ] Editor de serviços, preços e textos.
+- [x] Editor de serviços, preços, disponibilidade e exclusão segura.
 - [ ] Grade semanal padrão e exceções por data.
 - [ ] Bloqueios de viagem, provas e pausas.
 - [ ] Cadastro e histórico de clientes.

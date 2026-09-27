@@ -29,10 +29,11 @@ O e-mail da desenvolvedora poderá ser usado para validar o Google Agenda. Para 
 
 ## Catálogo de serviços
 
-- Para editar ou pausar um atendimento, abrir **Serviços** no painel e tocar no card correspondente.
+- Para editar, pausar ou excluir um atendimento, abrir **Serviços** no painel e tocar no card correspondente.
 - Pausar não exclui o serviço nem apaga reservas antigas; é indicado para férias, pausa temporária ou teste de formato.
+- Excluir retira o serviço do catálogo e do site, mas preserva as reservas antigas no histórico.
 - Para criar um atendimento, usar **Adicionar serviço** e preencher nome, descrição, preço e duração.
-- Antes de divulgar um serviço novo, confirmar se ele já foi conectado ao fluxo público de agendamento. Os serviços iniciais estão conectados; a publicação automática de novos serviços é uma melhoria planejada.
+- Serviços ativos criados pelo painel aparecem automaticamente no fluxo público de agendamento.
 
 ## Manutenibilidade
 
